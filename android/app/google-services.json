@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "292898813989",
+    "project_id": "flexbgm-3f5d4",
+    "storage_bucket": "flexbgm-3f5d4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:292898813989:android:00b994e2ecca4fc41067cc",
+        "android_client_info": {
+          "package_name": "com.example.flextv_bgm_player"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi05b_K0v8lQ-NPTI0czLav0nOENHeMPw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
