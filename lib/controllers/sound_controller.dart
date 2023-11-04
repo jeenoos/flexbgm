@@ -1,6 +1,6 @@
 import 'package:audio_session/audio_session.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
-import 'package:flextv_bgm_player/widget/audio/common.dart';
+import 'package:flextv_bgm_player/widget/audio/audio_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:get/get.dart';
@@ -8,6 +8,7 @@ import 'package:rxdart/rxdart.dart';
 
 class SoundController extends GetxController with WidgetsBindingObserver {
   final _player = AudioPlayer();
+  TextEditingController sourceController = TextEditingController();
   AudioPlayer get player => _player;
 
   @override
@@ -18,7 +19,7 @@ class SoundController extends GetxController with WidgetsBindingObserver {
 
   void play(SoundSource source) {
     _player.setFilePath(source.uri);
-    _player.play();
+    // _player.play();
   }
 
   Future<void> _init() async {

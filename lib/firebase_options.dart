@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAi05b_K0v8lQ-NPTI0czLav0nOENHeMPw',
-    appId: '1:292898813989:android:00b994e2ecca4fc41067cc',
+    appId: '1:292898813989:android:5827d19fa97aa7751067cc',
     messagingSenderId: '292898813989',
     projectId: 'flexbgm-3f5d4',
     storageBucket: 'flexbgm-3f5d4.appspot.com',
@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAMITYOpVRj8s8prhf_MiWEb7CzfBEuAY8',
-    appId: '1:292898813989:ios:45e411f6b6a5dbca1067cc',
+    appId: '1:292898813989:ios:3aaf73fea0f1f44d1067cc',
     messagingSenderId: '292898813989',
     projectId: 'flexbgm-3f5d4',
     storageBucket: 'flexbgm-3f5d4.appspot.com',
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyAMITYOpVRj8s8prhf_MiWEb7CzfBEuAY8',
-    appId: '1:292898813989:ios:913b3521b4ee772a1067cc',
+    appId: '1:292898813989:ios:80d3582ffc079dc51067cc',
     messagingSenderId: '292898813989',
     projectId: 'flexbgm-3f5d4',
     storageBucket: 'flexbgm-3f5d4.appspot.com',

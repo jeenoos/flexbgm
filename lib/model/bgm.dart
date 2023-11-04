@@ -83,9 +83,9 @@ class SoundSource {
 
 enum SoundSourceType {
   file('file', '파일', FontAwesomeIcons.recordVinyl, ''),
+  url('url', '주소', Icons.link, 'https://example.com/bgm.mp3'),
   youtube('youtube', '유튜브', FontAwesomeIcons.youtube,
-      'https://youtu.be/example?feature=shared'),
-  url('url', '주소', Icons.link, 'https://example.com/bgm.mp3');
+      'https://youtu.be/example?feature=shared');
 
   final String value;
   final String label;

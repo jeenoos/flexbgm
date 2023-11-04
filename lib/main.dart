@@ -5,6 +5,7 @@ import 'package:flextv_bgm_player/controllers/auth_controller.dart';
 import 'package:flextv_bgm_player/controllers/bgm_controller.dart';
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flextv_bgm_player/controllers/signin_controller.dart';
+import 'package:flextv_bgm_player/controllers/youtube_controller.dart';
 import 'package:flextv_bgm_player/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
       initialBinding: BindingsBuilder(() {
         Get.put(AuthController());
         Get.put(SoundController());
+        Get.put(YoutubeController());
         Get.put(BgmController());
         Get.lazyPut(() => SigninController(), fenix: true);
       }),

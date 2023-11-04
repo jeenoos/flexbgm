@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() {
-    debugPrint('${111111}');
     return _instance;
   }
   Dio _dio = Dio();

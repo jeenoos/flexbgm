@@ -1,10 +1,11 @@
-import 'dart:ffi' as Size2;
-
 import 'package:flextv_bgm_player/controllers/bgm_controller.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
-import 'package:flextv_bgm_player/widget/audio/player.dart';
+import 'package:flextv_bgm_player/widget/audio/audio_player.dart';
+
 // import 'package:flextv_bgm_player/widget/audio/player_widget.dart';
 import 'package:flextv_bgm_player/widget/text_input.dart';
+import 'package:flextv_bgm_player/widget/youtube/youtube_player.dart';
+// import 'package:flextv_bgm_player/widget/youtube/youtube_player';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -15,8 +16,8 @@ class Editor extends GetView<BgmController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Scaffold(
+    return Obx(() {
+      return Scaffold(
         appBar: AppBar(
             leading: const BackButton(color: Colors.white),
             toolbarHeight: 60,
@@ -30,7 +31,7 @@ class Editor extends GetView<BgmController> {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +69,6 @@ class Editor extends GetView<BgmController> {
                   ),
                   const SizedBox(height: 10),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Flexible(
                         child: TextFormField(
@@ -112,82 +112,96 @@ class Editor extends GetView<BgmController> {
                   ),
                 ],
               ),
+              const SizedBox(height: 20),
               Visibility(
-                visible: controller.status.value == EditingStatus.modify,
-                child: Player(),
+                visible: controller.sourceType.value == SoundSourceType.youtube,
+                child: const Youtube(),
+              ),
+              Visibility(
+                visible: controller.sourceType.value != SoundSourceType.youtube,
+                child: AudioPlayer(),
               ),
               const SizedBox(height: 20),
-              Column(
-                children: [
-                  TextInput(
-                    height: 60,
-                    hintText: '후원 설정',
-                    controller: controller.doneController,
-                  ),
-                ],
-              ),
-              Expanded(
+              Visibility(
+                visible: controller.sourceType.value != SoundSourceType.youtube,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(left: 4),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4)),
-                                foregroundColor: Colors.black,
-                                backgroundColor: Colors.black87,
-                                textStyle: const TextStyle(fontSize: 14)),
-                            onPressed: () => controller.save(Get.arguments),
-                            child: const Row(
-                              children: [
-                                Icon(FontAwesomeIcons.check,
-                                    color: Colors.white, size: 16),
-                                SizedBox(width: 10),
-                                Text('저장',
-                                    style: TextStyle(color: Colors.white)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Visibility(
-                          visible:
-                              controller.status.value == EditingStatus.modify,
-                          child: Container(
+                    TextInput(
+                      height: 56,
+                      hintText: '후원 설정',
+                      controller: controller.doneController,
+                    ),
+                  ],
+                ),
+              ),
+              Visibility(
+                visible: controller.sourceType.value != SoundSourceType.youtube,
+                child: Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
                             margin: const EdgeInsets.only(left: 4),
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(4)),
                                   foregroundColor: Colors.black,
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: Colors.black87,
                                   textStyle: const TextStyle(fontSize: 14)),
-                              onPressed: () => controller.delete(Get.arguments),
+                              onPressed: () => controller.save(Get.arguments),
                               child: const Row(
                                 children: [
-                                  Icon(Icons.clear,
-                                      color: Colors.white, size: 20),
+                                  Icon(FontAwesomeIcons.check,
+                                      color: Colors.white, size: 16),
                                   SizedBox(width: 10),
-                                  Text('삭제',
-                                      style: TextStyle(color: Colors.white)),
+                                  Text(
+                                    '저장',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ],
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    )
-                  ],
+                          Visibility(
+                            visible:
+                                controller.status.value == EditingStatus.modify,
+                            child: Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4)),
+                                    foregroundColor: Colors.black,
+                                    backgroundColor: Colors.red,
+                                    textStyle: const TextStyle(fontSize: 14)),
+                                onPressed: () =>
+                                    controller.delete(Get.arguments),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.clear,
+                                        color: Colors.white, size: 20),
+                                    SizedBox(width: 10),
+                                    Text('삭제',
+                                        style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 ),
               )
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

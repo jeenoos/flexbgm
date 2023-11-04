@@ -1,13 +1,12 @@
 // import 'package:audioplayers/audioplayers.dart';
 
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
-import 'package:just_audio/just_audio.dart';
+// import 'package:flextv_bgm_player/controllers/youtube_controller';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flextv_bgm_player/constants/app_routes.dart';
-import 'package:flextv_bgm_player/controllers/auth_controller.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
 import 'package:flextv_bgm_player/model/user.dart';
 import 'package:flutter/material.dart';
@@ -30,9 +29,9 @@ enum EditingStatus {
 class BgmController extends GetxController {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   final SoundController soundController = Get.find<SoundController>();
+  // final YoutubeController youtubeController = Get.find<YoutubeController>();
   final Rx<EditingStatus> status = Rx(EditingStatus.done);
   final RxList<Sound> items = RxList();
-  final Rxn<Sound> editableItem = Rxn();
   final Rx<SoundSourceType> sourceType = Rx(SoundSourceType.file);
 
   // final Rx<SourceType> sourceType = Rx(SourceType.file);
@@ -43,7 +42,16 @@ class BgmController extends GetxController {
   User? user;
 
   //소스
-  TextEditingController sourceController = TextEditingController();
+  TextEditingController get sourceController {
+    switch (sourceType.value) {
+      case SoundSourceType.file:
+      case SoundSourceType.url:
+        return soundController.sourceController;
+      case SoundSourceType.youtube:
+        return soundController.sourceController;
+    }
+  }
+
   //렉스
   TextEditingController doneController = TextEditingController();
 
@@ -68,7 +76,7 @@ class BgmController extends GetxController {
     Sound item = items.firstWhere((e) => e.id == id);
     sourceController.text = item.source.uri;
     doneController.text = item.done;
-    editableItem.value = item;
+
     soundController
         .play(SoundSource(type: item.source.type, uri: item.source.uri));
     Get.toNamed(AppRoutes.editor, arguments: id);
@@ -100,8 +108,7 @@ class BgmController extends GetxController {
     return Sound(
       id: id ?? uuid.v4(),
       name: name.value,
-      source: editableItem.value?.source ??
-          SoundSource(type: sourceType.value, uri: sourceController.text),
+      source: SoundSource(type: sourceType.value, uri: sourceController.text),
       done: doneController.text,
     );
   }
@@ -119,23 +126,23 @@ class BgmController extends GetxController {
     doneController.text = '';
     errorName.value = null;
     errorSource.value = null;
-    editableItem.value = null;
   }
 
   void save(String? id) {
     if (validation()) {
-      Sound item = create(id);
+      Sound newItem = create(id);
+      Sound regacyItem = items.firstWhere((e) => e.id == id);
       // 데이터 같으면 저장 안함
-      if (mapEquals(editableItem.value?.toMap(), item.toMap())) {
+      if (mapEquals(regacyItem.toMap(), newItem.toMap())) {
         return Get.back();
       }
       switch (status.value) {
         case EditingStatus.modify:
-          int index = items.indexWhere((e) => e.id == item.id);
-          items[index] = item;
+          int index = items.indexWhere((e) => e.id == id);
+          items[index] = newItem;
           break;
         case EditingStatus.regist:
-          items.add(item);
+          items.add(newItem);
         default:
           break;
       }
@@ -146,7 +153,6 @@ class BgmController extends GetxController {
   }
 
   void submit() {
-    debugPrint('====>${items.map((e) => e.toMap()).toList()}');
     firestore
         .collection('bgm')
         // .doc(user?.id.toString())
@@ -166,6 +172,7 @@ class BgmController extends GetxController {
   onInit() async {
     super.onInit();
     respose = await load();
+    debugPrint('respose: ${respose}');
     items.value = respose?.playlist ?? [];
     debounce(
         errorName,
