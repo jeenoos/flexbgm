@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class SeekBar extends StatefulWidget {
   final Duration duration;
@@ -23,9 +25,8 @@ class SeekBar extends StatefulWidget {
 }
 
 class SeekBarState extends State<SeekBar> {
-  double? _dragValue;
   late SliderThemeData _sliderThemeData;
-
+  String? changed;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -37,8 +38,12 @@ class SeekBarState extends State<SeekBar> {
 
   @override
   Widget build(BuildContext context) {
+    SoundController controller = Get.find<SoundController>();
+    double duration = widget.duration.inMilliseconds.toDouble();
+    double position = widget.position.inMilliseconds.toDouble();
+
     return Stack(
-      children: [
+      children: <Widget>[
         SliderTheme(
           data: _sliderThemeData.copyWith(
             thumbShape: HiddenThumbComponentShape(),
@@ -51,58 +56,100 @@ class SeekBarState extends State<SeekBar> {
               max: widget.duration.inMilliseconds.toDouble(),
               value: min(widget.bufferedPosition.inMilliseconds.toDouble(),
                   widget.duration.inMilliseconds.toDouble()),
-              onChanged: (value) {
-                setState(() {
-                  _dragValue = value;
-                });
-                if (widget.onChanged != null) {
-                  widget.onChanged!(Duration(milliseconds: value.round()));
-                }
-              },
-              onChangeEnd: (value) {
-                if (widget.onChangeEnd != null) {
-                  widget.onChangeEnd!(Duration(milliseconds: value.round()));
-                }
-                _dragValue = null;
-              },
+              onChanged: (value) {},
             ),
           ),
         ),
-        SliderTheme(
-          data: _sliderThemeData.copyWith(
-            activeTrackColor: Colors.amber,
-            inactiveTrackColor: Colors.transparent,
-            thumbColor: Colors.amber,
-          ),
-          child: Slider(
-            min: 0.0,
-            max: widget.duration.inMilliseconds.toDouble(),
-            value: min(_dragValue ?? widget.position.inMilliseconds.toDouble(),
-                widget.duration.inMilliseconds.toDouble()),
-            onChanged: (value) {
-              setState(() {
-                _dragValue = value;
-              });
-              if (widget.onChanged != null) {
-                widget.onChanged!(Duration(milliseconds: value.round()));
-              }
-            },
-            onChangeEnd: (value) {
-              if (widget.onChangeEnd != null) {
-                widget.onChangeEnd!(Duration(milliseconds: value.round()));
-              }
-              _dragValue = null;
-            },
-          ),
-        ),
+        Obx(() {
+          return Stack(
+            children: [
+              Visibility(
+                visible: controller.isEdit.value,
+                child: IgnorePointer(
+                  ignoring: !controller.isEdit.value,
+                  child: SliderTheme(
+                    data: _sliderThemeData.copyWith(
+                      activeTrackColor: Colors.redAccent,
+                      inactiveTrackColor: Colors.transparent,
+                      thumbColor: Colors.redAccent,
+                      rangeThumbShape: CustomRangeSliderThumbShape(),
+                      showValueIndicator: ShowValueIndicator.always,
+                    ),
+                    child: RangeSlider(
+                      values: RangeValues(
+                          controller.dragRange.value?.start ?? 0,
+                          controller.dragRange.value?.end ?? duration),
+                      min: 0.0,
+                      max: duration,
+                      labels: const RangeLabels(
+                        '0',
+                        'test2',
+                      ),
+                      onChanged: (values) {
+                        setState(() {
+                          if (controller.dragRange.value?.start !=
+                              values.start) {
+                            changed = 'start';
+                          }
+                          if (controller.dragRange.value?.end != values.end) {
+                            changed = 'end';
+                          }
+                        });
+                        controller.dragRange.value = values;
+                      },
+                      onChangeEnd: (values) {
+                        if (widget.onChangeEnd != null) {
+                          if (changed == 'start') {
+                            widget.onChangeEnd!(values.start.milliseconds);
+                          }
+                          if (changed == 'end') {
+                            widget.onChangeEnd!(values.end.milliseconds);
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              IgnorePointer(
+                ignoring: controller.isEdit.value,
+                child: SliderTheme(
+                    data: _sliderThemeData.copyWith(
+                      activeTrackColor: controller.isEdit.value
+                          ? Colors.transparent
+                          : Colors.amber,
+                      inactiveTrackColor: Colors.transparent,
+                      thumbColor: Colors.amber,
+                      thumbShape: CustomSliderThumbShape(duration: duration),
+                      showValueIndicator: ShowValueIndicator.onlyForContinuous,
+                    ),
+                    child: Slider(
+                      min: 0.0,
+                      max: duration,
+                      value:
+                          min(controller.dragValue.value ?? position, duration),
+                      onChanged: (value) {
+                        controller.dragValue.value = value;
+                      },
+                      onChangeEnd: (value) {
+                        if (widget.onChangeEnd != null) {
+                          widget.onChangeEnd!(value.milliseconds);
+                        }
+                        controller.dragValue.value = null;
+                      },
+                    )),
+              ),
+            ],
+          );
+        }),
         Positioned(
           right: 16.0,
           bottom: 5.0,
           child: Text(
               RegExp(r'((^0*[1-9]\d*:)?\d{2}:\d{2})\.\d+$')
-                      .firstMatch("$_remaining")
+                      .firstMatch("${widget.duration}")
                       ?.group(1) ??
-                  '$_remaining',
+                  '${widget.duration}',
               style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
@@ -131,6 +178,95 @@ class HiddenThumbComponentShape extends SliderComponentShape {
     required double textScaleFactor,
     required Size sizeWithOverflow,
   }) {}
+}
+
+class CustomSliderThumbShape extends SliderComponentShape {
+  CustomSliderThumbShape({required this.duration});
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => Size.zero;
+  double duration;
+  late TextPainter labelTextPainter = TextPainter()
+    ..textDirection = TextDirection.ltr;
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final Canvas canvas = context.canvas;
+    final Paint strokePaint = Paint()
+      ..color = sliderTheme.thumbColor ?? Colors.yellow
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, 7.5, Paint()..color = Colors.white);
+    canvas.drawCircle(center, 7.5, strokePaint);
+
+    labelTextPainter.text = TextSpan(
+        text: Duration(milliseconds: (duration * value).toInt()).toMMSS(),
+        style: const TextStyle(fontSize: 14, color: Colors.black));
+    labelTextPainter.layout();
+    labelTextPainter.paint(
+        canvas,
+        center.translate(
+            -labelTextPainter.width / 2, labelTextPainter.height / 2));
+  }
+}
+
+class CustomRangeSliderThumbShape extends RangeSliderThumbShape {
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return const Size(20, 20);
+  }
+
+  double? start;
+  double? end;
+  late TextPainter labelTextPainter = TextPainter()
+    ..textDirection = TextDirection.ltr;
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    bool? isDiscrete,
+    bool? isEnabled,
+    bool? isOnTop,
+    TextDirection? textDirection,
+    required SliderThemeData sliderTheme,
+    Thumb? thumb,
+    bool? isPressed,
+  }) {
+    final Canvas canvas = context.canvas;
+    final Paint strokePaint = Paint()
+      ..color = sliderTheme.thumbColor ?? Colors.yellow
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, 7.5, Paint()..color = Colors.white);
+    canvas.drawCircle(center, 7.5, strokePaint);
+    if (thumb == null) {
+      return;
+    }
+    final value = thumb == Thumb.start ? start : end;
+    labelTextPainter.text = TextSpan(
+        text: value?.toStringAsFixed(2),
+        style: const TextStyle(fontSize: 14, color: Colors.black));
+    labelTextPainter.layout();
+    labelTextPainter.paint(
+        canvas,
+        center.translate(
+            -labelTextPainter.width / 2, labelTextPainter.height / 2));
+  }
 }
 
 class PositionData {
@@ -183,4 +319,25 @@ void showSliderDialog({
   );
 }
 
-// T? ambiguate<T>(T? value) => value;
+extension on Duration {
+  String toMMSS() {
+    var microseconds = inMicroseconds;
+    if (microseconds < 0) microseconds = -microseconds;
+
+    var minutes = microseconds ~/ Duration.microsecondsPerMinute;
+    microseconds = microseconds.remainder(Duration.microsecondsPerMinute);
+    var minutesPadding = minutes < 10 ? "0" : "";
+
+    var seconds = microseconds ~/ Duration.microsecondsPerSecond;
+    microseconds = microseconds.remainder(Duration.microsecondsPerSecond);
+    var secondsPadding = seconds < 10 ? "0" : "";
+
+    var milliseconds = microseconds ~/ Duration.microsecondsPerMillisecond;
+    microseconds = microseconds.remainder(Duration.microsecondsPerMillisecond);
+    var milliPadding = milliseconds < 10 ? "0" : "";
+
+    return "$minutesPadding$minutes:"
+        "$secondsPadding$seconds";
+    // "$milliPadding${milliseconds.toString().substring(0, 1)}";
+  }
+}

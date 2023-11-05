@@ -8,7 +8,11 @@ import 'package:rxdart/rxdart.dart';
 
 class SoundController extends GetxController with WidgetsBindingObserver {
   final _player = AudioPlayer();
-  TextEditingController sourceController = TextEditingController();
+  final RxBool isEdit = RxBool(false);
+  final RxnDouble dragValue = RxnDouble(null);
+  final Rxn<RangeValues> dragRange = Rxn(null);
+  TextEditingController urlController = TextEditingController();
+  TextEditingController pathController = TextEditingController();
   AudioPlayer get player => _player;
 
   @override
@@ -17,9 +21,36 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     _init();
   }
 
-  void play(SoundSource source) {
-    _player.setFilePath(source.uri);
-    // _player.play();
+  void setSource(SoundSource source) {
+    switch (source.type) {
+      case SoundSourceType.file:
+        _player.setFilePath(source.uri);
+        break;
+      case SoundSourceType.url:
+      case SoundSourceType.youtube:
+        _player.setUrl(source.uri);
+        _player.pause();
+        break;
+      // case SoundSourceType.youtube:
+    }
+  }
+
+  void reset() {
+    pathController.text = '';
+    urlController.text = '';
+    isEdit.value = false;
+    dragValue.value = null;
+    dragRange.value = null;
+    _player.stop();
+  }
+
+  void play() {
+    _player.play();
+  }
+
+  void stop() {
+    _player.stop();
+    _player.seek(const Duration(seconds: 0));
   }
 
   Future<void> _init() async {

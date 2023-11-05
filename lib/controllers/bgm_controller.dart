@@ -45,10 +45,11 @@ class BgmController extends GetxController {
   TextEditingController get sourceController {
     switch (sourceType.value) {
       case SoundSourceType.file:
+        return soundController.pathController;
       case SoundSourceType.url:
-        return soundController.sourceController;
+        return soundController.urlController;
       case SoundSourceType.youtube:
-        return soundController.sourceController;
+        return soundController.urlController;
     }
   }
 
@@ -74,11 +75,11 @@ class BgmController extends GetxController {
   void modify(String id) async {
     status.value = EditingStatus.modify;
     Sound item = items.firstWhere((e) => e.id == id);
+    sourceType.value = item.source.type;
     sourceController.text = item.source.uri;
     doneController.text = item.done;
-
     soundController
-        .play(SoundSource(type: item.source.type, uri: item.source.uri));
+        .setSource(SoundSource(type: item.source.type, uri: item.source.uri));
     Get.toNamed(AppRoutes.editor, arguments: id);
   }
 
@@ -97,11 +98,20 @@ class BgmController extends GetxController {
     );
     if (result != null) {
       String path = result.files.single.path!;
-      name.value = basenameWithoutExtension(path);
-      sourceController.text = path;
+      soundController.pathController.text = path;
     } else {
-      sourceController.text = '파일 경로를 찾을 수 없습니다.';
+      soundController.pathController.text = '파일 경로를 찾을 수 없습니다.';
     }
+  }
+
+  void load() {
+    if (sourceController.text.isEmpty) {
+      errorSource.value = 'URL 주소를 입력 해주세요';
+      return;
+    }
+    name.value = basenameWithoutExtension(sourceController.text);
+    soundController.setSource(
+        SoundSource(type: sourceType.value, uri: sourceController.text));
   }
 
   Sound create(String? id) {
@@ -122,7 +132,7 @@ class BgmController extends GetxController {
   }
 
   void reset() {
-    sourceController.text = '';
+    soundController.reset();
     doneController.text = '';
     errorName.value = null;
     errorSource.value = null;
@@ -131,13 +141,14 @@ class BgmController extends GetxController {
   void save(String? id) {
     if (validation()) {
       Sound newItem = create(id);
-      Sound regacyItem = items.firstWhere((e) => e.id == id);
-      // 데이터 같으면 저장 안함
-      if (mapEquals(regacyItem.toMap(), newItem.toMap())) {
-        return Get.back();
-      }
+
       switch (status.value) {
         case EditingStatus.modify:
+          Sound regacyItem = items.firstWhere((e) => e.id == id);
+          // 데이터 같으면 저장 안함
+          if (mapEquals(regacyItem.toMap(), newItem.toMap())) {
+            return Get.back();
+          }
           int index = items.indexWhere((e) => e.id == id);
           items[index] = newItem;
           break;
@@ -160,7 +171,11 @@ class BgmController extends GetxController {
         .update({"playlist": items.map((e) => e.toMap()).toList()});
   }
 
-  Future<Bgm> load() async {
+  void _sourceTypeListener(value) {
+    soundController.stop();
+  }
+
+  Future<Bgm> connection() async {
     DocumentSnapshot<Map<String, dynamic>> response =
         // await firestore.collection('bgm').doc(_user?.id.toString()).get();
         await firestore.collection('bgm').doc('17483').get();
@@ -171,9 +186,10 @@ class BgmController extends GetxController {
   @override
   onInit() async {
     super.onInit();
-    respose = await load();
-    debugPrint('respose: ${respose}');
+    respose = await connection();
     items.value = respose?.playlist ?? [];
+    sourceType.listen(_sourceTypeListener);
+
     debounce(
         errorName,
         (callback) => Future.delayed(

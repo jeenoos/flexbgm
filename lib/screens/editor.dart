@@ -87,25 +87,27 @@ class Editor extends GetView<BgmController> {
                           ),
                         ),
                       ),
-                      Visibility(
-                        visible:
-                            controller.sourceType.value == SoundSourceType.file,
-                        child: Container(
-                          alignment: Alignment.center,
-                          margin: const EdgeInsets.only(left: 10.0),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.black87,
-                              shadowColor: Colors.grey,
-                              elevation: 3,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0)),
-                              minimumSize: const Size(100, 65), //////// HERE
-                            ),
-                            onPressed: () => controller.pick(),
-                            child: const Text('파일선택'),
+                      Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.only(left: 10.0),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.black87,
+                            shadowColor: Colors.grey,
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0)),
+                            minimumSize: const Size(100, 65), //////// HERE
                           ),
+                          onPressed: () => controller.sourceType.value ==
+                                  SoundSourceType.file
+                              ? controller.pick()
+                              : controller.load(),
+                          child: controller.sourceType.value ==
+                                  SoundSourceType.file
+                              ? const Text('파일선택')
+                              : const Text('불러오기'),
                         ),
                       ),
                     ],

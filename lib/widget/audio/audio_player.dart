@@ -1,7 +1,7 @@
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flextv_bgm_player/widget/audio/audio_controls.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/simple/get_view.dart';
+import 'package:get/get.dart';
 import 'audio_ui.dart';
 
 class AudioPlayer extends GetView<SoundController> with WidgetsBindingObserver {
@@ -25,32 +25,27 @@ class AudioPlayer extends GetView<SoundController> with WidgetsBindingObserver {
               child: IntrinsicHeight(
                 child: Row(
                   children: <Widget>[
-                    Container(
-                      height: 56,
-                      width: 160.0,
-                      color: Colors.amber,
-                      child: AudioControls(player: controller.player),
-                    ),
+                    Obx(() => Container(
+                          height: 60,
+                          width: 160.0,
+                          color: controller.isEdit.value
+                              ? Colors.redAccent
+                              : Colors.amber,
+                          child: AudioControls(player: controller.player),
+                        )),
                     Expanded(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          // borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: StreamBuilder<PositionData>(
-                          stream: controller.stream,
-                          builder: (context, snapshot) {
-                            final positionData = snapshot.data;
-                            return SeekBar(
-                              duration: positionData?.duration ?? Duration.zero,
-                              position: positionData?.position ?? Duration.zero,
-                              bufferedPosition:
-                                  positionData?.bufferedPosition ??
-                                      Duration.zero,
-                              onChangeEnd: controller.player.seek,
-                            );
-                          },
-                        ),
+                      child: StreamBuilder<PositionData>(
+                        stream: controller.stream,
+                        builder: (context, snapshot) {
+                          final positionData = snapshot.data;
+                          return SeekBar(
+                            duration: positionData?.duration ?? Duration.zero,
+                            position: positionData?.position ?? Duration.zero,
+                            bufferedPosition:
+                                positionData?.bufferedPosition ?? Duration.zero,
+                            onChangeEnd: controller.player.seek,
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -71,10 +66,14 @@ class AudioPlayer extends GetView<SoundController> with WidgetsBindingObserver {
                   borderRadius: BorderRadius.circular(10.0)),
               minimumSize: const Size(100, 65), //////// HERE
             ),
-            onPressed: () => {},
-            child: const Text('구간편집'),
+            onPressed: () => controller.isEdit.value = !controller.isEdit.value,
+            child: Obx(() {
+              return controller.isEdit.value
+                  ? const Text('편집완료')
+                  : const Text('구간편집');
+            }),
           ),
-        ),
+        )
       ],
     );
   }

@@ -40,6 +40,12 @@ class MyApp extends StatelessWidget {
       }),
       getPages: AppPages.pages,
       initialRoute: AppRoutes.home,
+      routingCallback: (routing) {
+        debugPrint('${routing?.current}');
+        if (routing?.current == '/home') {
+          Get.find<SoundController>().reset();
+        }
+      },
     );
   }
 }
