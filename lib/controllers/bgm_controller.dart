@@ -29,12 +29,11 @@ enum EditingStatus {
 class BgmController extends GetxController {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   final SoundController soundController = Get.find<SoundController>();
-  // final YoutubeController youtubeController = Get.find<YoutubeController>();
+
   final Rx<EditingStatus> status = Rx(EditingStatus.done);
   final RxList<Sound> items = RxList();
   final Rx<SoundSourceType> sourceType = Rx(SoundSourceType.file);
 
-  // final Rx<SourceType> sourceType = Rx(SourceType.file);
   final RxString name = RxString('제목 없음');
   final RxnString errorName = RxnString(null);
   final RxnString errorSource = RxnString(null);
@@ -78,8 +77,7 @@ class BgmController extends GetxController {
     sourceType.value = item.source.type;
     sourceController.text = item.source.uri;
     doneController.text = item.done;
-    soundController
-        .setSource(SoundSource(type: item.source.type, uri: item.source.uri));
+    soundController.setSound(item);
     Get.toNamed(AppRoutes.editor, arguments: id);
   }
 
@@ -102,6 +100,7 @@ class BgmController extends GetxController {
     } else {
       soundController.pathController.text = '파일 경로를 찾을 수 없습니다.';
     }
+    soundController.setUri(sourceController.text);
   }
 
   void load() {
@@ -110,15 +109,18 @@ class BgmController extends GetxController {
       return;
     }
     name.value = basenameWithoutExtension(sourceController.text);
-    soundController.setSource(
-        SoundSource(type: sourceType.value, uri: sourceController.text));
+    soundController.setUri(sourceController.text);
   }
 
   Sound create(String? id) {
     return Sound(
       id: id ?? uuid.v4(),
       name: name.value,
-      source: SoundSource(type: sourceType.value, uri: sourceController.text),
+      source: SoundSource(
+        type: sourceType.value,
+        uri: sourceController.text,
+        range: soundController.range.value,
+      ),
       done: doneController.text,
     );
   }
@@ -141,7 +143,6 @@ class BgmController extends GetxController {
   void save(String? id) {
     if (validation()) {
       Sound newItem = create(id);
-
       switch (status.value) {
         case EditingStatus.modify:
           Sound regacyItem = items.firstWhere((e) => e.id == id);
@@ -157,6 +158,7 @@ class BgmController extends GetxController {
         default:
           break;
       }
+
       items.refresh();
       submit();
       Get.back();

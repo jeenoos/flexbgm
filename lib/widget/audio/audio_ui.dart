@@ -10,7 +10,6 @@ class SeekBar extends StatefulWidget {
   final Duration bufferedPosition;
   final ValueChanged<Duration>? onChanged;
   final ValueChanged<Duration>? onChangeEnd;
-
   const SeekBar({
     Key? key,
     required this.duration,
@@ -26,11 +25,11 @@ class SeekBar extends StatefulWidget {
 
 class SeekBarState extends State<SeekBar> {
   late SliderThemeData _sliderThemeData;
+  SoundController controller = Get.find<SoundController>();
   String? changed;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     _sliderThemeData = SliderTheme.of(context).copyWith(
       trackHeight: 2.0,
     );
@@ -38,9 +37,15 @@ class SeekBarState extends State<SeekBar> {
 
   @override
   Widget build(BuildContext context) {
-    SoundController controller = Get.find<SoundController>();
-    double duration = widget.duration.inMilliseconds.toDouble();
+    double start = controller.range.value!.start;
+    double end = controller.range.value!.end;
+    double buffer = widget.bufferedPosition.inMilliseconds.toDouble();
     double position = widget.position.inMilliseconds.toDouble();
+    double duration = widget.duration.inMilliseconds.toDouble();
+    // debugPrint('start: ${start}');
+    // debugPrint('end: ${end}');
+    // debugPrint('position: ${position}');
+    // debugPrint('duration: ${duration}');
 
     return Stack(
       children: <Widget>[
@@ -53,9 +58,8 @@ class SeekBarState extends State<SeekBar> {
           child: ExcludeSemantics(
             child: Slider(
               min: 0.0,
-              max: widget.duration.inMilliseconds.toDouble(),
-              value: min(widget.bufferedPosition.inMilliseconds.toDouble(),
-                  widget.duration.inMilliseconds.toDouble()),
+              max: duration,
+              value: min(buffer, duration),
               onChanged: (value) {},
             ),
           ),
@@ -65,49 +69,54 @@ class SeekBarState extends State<SeekBar> {
             children: [
               Visibility(
                 visible: controller.isEdit.value,
-                child: IgnorePointer(
-                  ignoring: !controller.isEdit.value,
-                  child: SliderTheme(
-                    data: _sliderThemeData.copyWith(
-                      activeTrackColor: Colors.redAccent,
-                      inactiveTrackColor: Colors.transparent,
-                      thumbColor: Colors.redAccent,
-                      rangeThumbShape: CustomRangeSliderThumbShape(),
-                      showValueIndicator: ShowValueIndicator.always,
+                child: SliderTheme(
+                  data: _sliderThemeData.copyWith(
+                    activeTrackColor: Colors.redAccent,
+                    inactiveTrackColor: Colors.transparent,
+                    thumbColor: Colors.redAccent,
+                    rangeThumbShape: CustomRangeSliderThumbShape(),
+                    showValueIndicator: ShowValueIndicator.always,
+                  ),
+                  child: RangeSlider(
+                    values: RangeValues(
+                      start,
+                      end,
                     ),
-                    child: RangeSlider(
-                      values: RangeValues(
-                          controller.dragRange.value?.start ?? 0,
-                          controller.dragRange.value?.end ?? duration),
-                      min: 0.0,
-                      max: duration,
-                      labels: const RangeLabels(
-                        '0',
-                        'test2',
-                      ),
-                      onChanged: (values) {
-                        setState(() {
-                          if (controller.dragRange.value?.start !=
-                              values.start) {
-                            changed = 'start';
-                          }
-                          if (controller.dragRange.value?.end != values.end) {
-                            changed = 'end';
-                          }
-                        });
-                        controller.dragRange.value = values;
-                      },
-                      onChangeEnd: (values) {
-                        if (widget.onChangeEnd != null) {
-                          if (changed == 'start') {
-                            widget.onChangeEnd!(values.start.milliseconds);
-                          }
-                          if (changed == 'end') {
-                            widget.onChangeEnd!(values.end.milliseconds);
-                          }
+                    min: 0.0,
+                    max: max(end, duration),
+                    labels: RangeLabels(
+                      Duration(
+                              milliseconds:
+                                  controller.range.value?.start.toInt() ??
+                                      position.toInt())
+                          .toMMSS(),
+                      Duration(
+                              milliseconds:
+                                  controller.range.value?.end.toInt() ??
+                                      duration.toInt())
+                          .toMMSS(),
+                    ),
+                    onChanged: (values) {
+                      setState(() {
+                        if (controller.range.value?.start != values.start) {
+                          changed = 'start';
                         }
-                      },
-                    ),
+                        if (controller.range.value?.end != values.end) {
+                          changed = 'end';
+                        }
+                      });
+                      controller.range.value = values;
+                    },
+                    onChangeEnd: (values) {
+                      if (widget.onChangeEnd != null) {
+                        if (changed == 'start') {
+                          widget.onChangeEnd!(values.start.milliseconds);
+                        }
+                        if (changed == 'end') {
+                          widget.onChangeEnd!(values.end.milliseconds);
+                        }
+                      }
+                    },
                   ),
                 ),
               ),
@@ -125,17 +134,16 @@ class SeekBarState extends State<SeekBar> {
                     ),
                     child: Slider(
                       min: 0.0,
-                      max: duration,
-                      value:
-                          min(controller.dragValue.value ?? position, duration),
+                      max: max(end, duration),
+                      value: min(controller.drag.value ?? position, duration),
                       onChanged: (value) {
-                        controller.dragValue.value = value;
+                        controller.drag.value = value;
                       },
                       onChangeEnd: (value) {
                         if (widget.onChangeEnd != null) {
                           widget.onChangeEnd!(value.milliseconds);
                         }
-                        controller.dragValue.value = null;
+                        controller.drag.value = null;
                       },
                     )),
               ),
@@ -156,7 +164,7 @@ class SeekBarState extends State<SeekBar> {
     );
   }
 
-  Duration get _remaining => widget.duration - widget.position;
+  // Duration get _remaining => widget.duration - widget.position;
 }
 
 class HiddenThumbComponentShape extends SliderComponentShape {
@@ -284,7 +292,6 @@ void showSliderDialog({
   required double min,
   required double max,
   String valueSuffix = '',
-  // TODO: Replace these two by ValueStream.
   required double value,
   required Stream<double> stream,
   required ValueChanged<double> onChanged,
@@ -332,9 +339,9 @@ extension on Duration {
     microseconds = microseconds.remainder(Duration.microsecondsPerSecond);
     var secondsPadding = seconds < 10 ? "0" : "";
 
-    var milliseconds = microseconds ~/ Duration.microsecondsPerMillisecond;
-    microseconds = microseconds.remainder(Duration.microsecondsPerMillisecond);
-    var milliPadding = milliseconds < 10 ? "0" : "";
+    // var milliseconds = microseconds ~/ Duration.microsecondsPerMillisecond;
+    // microseconds = microseconds.remainder(Duration.microsecondsPerMillisecond);
+    // var milliPadding = milliseconds < 10 ? "0" : "";
 
     return "$minutesPadding$minutes:"
         "$secondsPadding$seconds";

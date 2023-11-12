@@ -71,13 +71,39 @@ class Sound {
 class SoundSource {
   final SoundSourceType type;
   final String uri;
-  const SoundSource({required this.type, required this.uri});
+  RangeValues? range;
+  SoundSource({
+    required this.type,
+    required this.uri,
+    this.range,
+  });
 
   factory SoundSource.fromMap(Map<String, dynamic> map) {
-    return SoundSource(type: SoundSourceType.get(map['type']), uri: map['uri']);
+    return SoundSource(
+      type: SoundSourceType.get(map['type']),
+      uri: map['uri'],
+      range: SoundSourceRange.fromMap(map['range']),
+    );
   }
   Map<String, dynamic> toMap() {
-    return <String, dynamic>{'type': type.value, 'uri': uri};
+    return <String, dynamic>{
+      'type': type.value,
+      'uri': uri,
+      'range': SoundSourceRange.toMap(range?.start, range?.end)
+    };
+  }
+}
+
+class SoundSourceRange {
+  static fromMap(Map<String, dynamic> map) {
+    return RangeValues(map['start'], map['end']);
+  }
+
+  static toMap(start, end) {
+    return <String, dynamic>{
+      'start': start,
+      'end': end,
+    };
   }
 }
 

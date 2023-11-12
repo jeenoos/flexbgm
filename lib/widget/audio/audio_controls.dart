@@ -23,7 +23,7 @@ class AudioControls extends GetView<SoundController> {
           onPressed: () {
             showSliderDialog(
               context: context,
-              title: "Adjust volume",
+              title: "볼륨",
               divisions: 10,
               min: 0.0,
               max: 1.0,
@@ -54,7 +54,7 @@ class AudioControls extends GetView<SoundController> {
                   color: Colors.white,
                 ),
                 iconSize: 40.0,
-                onPressed: player.play,
+                onPressed: controller.play,
               );
             } else if (processingState != ProcessingState.completed) {
               return IconButton(
@@ -89,7 +89,7 @@ class AudioControls extends GetView<SoundController> {
             onPressed: () {
               showSliderDialog(
                 context: context,
-                title: "Adjust speed",
+                title: "재생속도",
                 divisions: 10,
                 min: 0.5,
                 max: 1.5,

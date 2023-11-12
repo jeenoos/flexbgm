@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:audio_session/audio_session.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
 import 'package:flextv_bgm_player/widget/audio/audio_ui.dart';
@@ -9,8 +11,9 @@ import 'package:rxdart/rxdart.dart';
 class SoundController extends GetxController with WidgetsBindingObserver {
   final _player = AudioPlayer();
   final RxBool isEdit = RxBool(false);
-  final RxnDouble dragValue = RxnDouble(null);
-  final Rxn<RangeValues> dragRange = Rxn(null);
+  final RxnDouble drag = RxnDouble(null);
+  final RxDouble payload = RxDouble(0.0);
+  final Rxn<RangeValues> range = Rxn(null);
   TextEditingController urlController = TextEditingController();
   TextEditingController pathController = TextEditingController();
   AudioPlayer get player => _player;
@@ -21,44 +24,57 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     _init();
   }
 
-  void setSource(SoundSource source) {
-    switch (source.type) {
-      case SoundSourceType.file:
-        _player.setFilePath(source.uri);
-        break;
-      case SoundSourceType.url:
-      case SoundSourceType.youtube:
-        _player.setUrl(source.uri);
-        _player.pause();
-        break;
-      // case SoundSourceType.youtube:
+  void setUri(String path) async {
+    Uri uri = Uri.parse(path);
+    if (uri.isScheme('https') || uri.isScheme('http')) {
+      _player.setUrl(path);
+    } else {
+      _player.setFilePath(path);
     }
+    Duration? res = await _player.load();
+
+    if (res != null) {
+      _player.seek(Duration(milliseconds: range.value!.start.toInt()));
+      payload.value = res.inMilliseconds.toDouble();
+    }
+  }
+
+  void setSound(Sound sound) async {
+    range.value = sound.source.range;
+    setUri(sound.source.uri);
   }
 
   void reset() {
     pathController.text = '';
     urlController.text = '';
     isEdit.value = false;
-    dragValue.value = null;
-    dragRange.value = null;
+    drag.value = null;
+    range.value = null;
+    payload.value = 0;
     _player.stop();
   }
 
   void play() {
-    _player.play();
+    if (range.value == null) {
+      _player.play();
+    } else {
+      _player
+          .seek(Duration(milliseconds: range.value!.start.toInt()))
+          .then((value) => _player.play());
+    }
   }
 
   void stop() {
     _player.stop();
-    _player.seek(const Duration(seconds: 0));
+    _player.seek(Duration(
+        milliseconds: range.value == null ? 0 : range.value!.start.toInt()));
   }
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
-
     _player.playbackEventStream.listen((event) {
-      debugPrint('${event.updatePosition}');
+      // debugPrint('stream => ${event.updatePosition}');
     }, onError: (Object e, StackTrace stackTrace) {
       debugPrint('A stream error occurred: $e');
     });

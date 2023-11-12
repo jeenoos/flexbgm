@@ -1,4 +1,5 @@
 import 'package:flextv_bgm_player/controllers/bgm_controller.dart';
+import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
 import 'package:flextv_bgm_player/widget/audio/audio_player.dart';
 
@@ -120,7 +121,9 @@ class Editor extends GetView<BgmController> {
                 child: const Youtube(),
               ),
               Visibility(
-                visible: controller.sourceType.value != SoundSourceType.youtube,
+                visible:
+                    controller.sourceType.value != SoundSourceType.youtube &&
+                        Get.find<SoundController>().payload > 0,
                 child: AudioPlayer(),
               ),
               const SizedBox(height: 20),
