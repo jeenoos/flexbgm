@@ -42,6 +42,7 @@ class SeekBarState extends State<SeekBar> {
     double buffer = widget.bufferedPosition.inMilliseconds.toDouble();
     double position = widget.position.inMilliseconds.toDouble();
     double duration = widget.duration.inMilliseconds.toDouble();
+    debugPrint('duration: ${duration}');
     // debugPrint('start: ${start}');
     // debugPrint('end: ${end}');
     // debugPrint('position: ${position}');
@@ -134,7 +135,7 @@ class SeekBarState extends State<SeekBar> {
                     ),
                     child: Slider(
                       min: 0.0,
-                      max: max(end, duration),
+                      max: duration,
                       value: min(controller.drag.value ?? position, duration),
                       onChanged: (value) {
                         controller.drag.value = value;

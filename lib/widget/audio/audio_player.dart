@@ -39,16 +39,12 @@ class AudioPlayer extends GetView<SoundController> with WidgetsBindingObserver {
                           stream: controller.stream,
                           builder: (context, snapshot) {
                             final positionData = snapshot.data;
-                            Duration position =
-                                positionData?.position ?? Duration.zero;
-                            Duration duration =
-                                positionData?.duration ?? Duration.zero;
-                            Duration buffer =
-                                positionData?.bufferedPosition ?? Duration.zero;
                             return SeekBar(
-                              position: position,
-                              duration: duration,
-                              bufferedPosition: buffer,
+                              position: positionData?.position ?? Duration.zero,
+                              duration: positionData?.duration ?? Duration.zero,
+                              bufferedPosition:
+                                  positionData?.bufferedPosition ??
+                                      Duration.zero,
                               onChangeEnd: controller.player.seek,
                             );
                           },

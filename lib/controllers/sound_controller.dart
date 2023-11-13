@@ -24,24 +24,30 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     _init();
   }
 
-  void setUri(String path) async {
+  Future<void> setUri(String path) async {
     Uri uri = Uri.parse(path);
     if (uri.isScheme('https') || uri.isScheme('http')) {
-      _player.setUrl(path);
+      await _player.setUrl(path);
     } else {
-      _player.setFilePath(path);
+      await _player.setFilePath(path);
     }
     Duration? res = await _player.load();
-
     if (res != null) {
-      _player.seek(Duration(milliseconds: range.value!.start.toInt()));
-      payload.value = res.inMilliseconds.toDouble();
+      double duration = res.inMilliseconds.toDouble();
+      range.value = RangeValues(0.0, duration);
+      payload.value = duration;
     }
   }
 
   void setSound(Sound sound) async {
-    range.value = sound.source.range;
-    setUri(sound.source.uri);
+    await setUri(sound.source.uri);
+    if (sound.source.range != null) {
+      range.value = sound.source.range;
+      await _player.setClip(
+        start: Duration(milliseconds: range.value!.start.toInt()),
+        end: Duration(milliseconds: range.value!.end.toInt()),
+      );
+    }
   }
 
   void reset() {
@@ -51,23 +57,16 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     drag.value = null;
     range.value = null;
     payload.value = 0;
-    _player.stop();
+    player.stop();
   }
 
-  void play() {
-    if (range.value == null) {
-      _player.play();
-    } else {
-      _player
-          .seek(Duration(milliseconds: range.value!.start.toInt()))
-          .then((value) => _player.play());
-    }
+  void play() async {
+    _player.play();
   }
 
   void stop() {
     _player.stop();
-    _player.seek(Duration(
-        milliseconds: range.value == null ? 0 : range.value!.start.toInt()));
+    _player.seek(const Duration(milliseconds: 0));
   }
 
   Future<void> _init() async {
@@ -78,8 +77,14 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     }, onError: (Object e, StackTrace stackTrace) {
       debugPrint('A stream error occurred: $e');
     });
+    isEdit.listen((edit) {
+      edit
+          ? _player.setClip()
+          : _player.setClip(
+              start: Duration(milliseconds: range.value!.start.toInt()),
+              end: Duration(milliseconds: range.value!.end.toInt()));
+    });
 
-    // try {
     //   // AAC example: https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.aac
     //   await _player.setAudioSource(AudioSource.uri(Uri.parse(
     //       "https://s3.amazonaws.com/scifri-episodes/scifri20181123-episode.mp3")));
