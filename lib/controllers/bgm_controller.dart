@@ -100,7 +100,7 @@ class BgmController extends GetxController {
     } else {
       soundController.pathController.text = '파일 경로를 찾을 수 없습니다.';
     }
-    soundController.setUri(sourceController.text);
+    load();
   }
 
   void load() {
@@ -108,6 +108,7 @@ class BgmController extends GetxController {
       errorSource.value = 'URL 주소를 입력 해주세요';
       return;
     }
+
     name.value = basenameWithoutExtension(sourceController.text);
     soundController.setUri(sourceController.text);
   }
