@@ -48,6 +48,7 @@ dependencies:
   rxdart: ^0.27.7
   permission_handler: ^11.0.1
   youtube_player_flutter: ^8.1.2
+  flutter_xlider: ^3.5.0
 
 dev_dependencies:
   flutter_test:

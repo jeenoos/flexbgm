@@ -51,38 +51,55 @@ class SoundController extends GetxController with WidgetsBindingObserver {
   }
 
   void reset() {
+    _player.stop();
+    isEdit.value = false;
     pathController.text = '';
     urlController.text = '';
     isEdit.value = false;
     drag.value = null;
     range.value = null;
     payload.value = 0;
-    player.stop();
+  }
+
+  void seekAndPlay(double position) async {
+    await _player.seek(Duration(milliseconds: position.toInt()));
+    _player.play();
   }
 
   void play() async {
-    _player.play();
+    isEdit.value ? seekAndPlay(range.value?.start ?? 0) : _player.play();
   }
 
   void stop() {
     _player.stop();
-    _player.seek(const Duration(milliseconds: 0));
+  }
+
+  void pause() {
+    _player.pause();
+  }
+
+  void seek(double position) {
+    _player.seek(Duration(milliseconds: position.toInt()));
   }
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
     _player.playbackEventStream.listen((event) {
-      // debugPrint('stream => ${event.updatePosition}');
+      debugPrint('${event.updatePosition}');
     }, onError: (Object e, StackTrace stackTrace) {
       debugPrint('A stream error occurred: $e');
     });
-    isEdit.listen((edit) {
+
+    isEdit.listen((edit) async {
+      Duration start = Duration(milliseconds: range.value?.start.toInt() ?? 0);
+      Duration end = Duration(
+          milliseconds: range.value?.end.toInt() ?? payload.value.toInt());
       edit
-          ? _player.setClip()
-          : _player.setClip(
-              start: Duration(milliseconds: range.value!.start.toInt()),
-              end: Duration(milliseconds: range.value!.end.toInt()));
+          ? await _player.setClip()
+          : await _player.setClip(start: start, end: end);
+      edit ? await _player.seek(start) : await _player.seek(Duration.zero);
+      _player.stop();
     });
 
     //   // AAC example: https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.aac
