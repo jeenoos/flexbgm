@@ -2,12 +2,23 @@ import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flextv_bgm_player/widget/audio/audio_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'audio_ui.dart';
+import 'package:rxdart/rxdart.dart';
+import 'audio_common.dart';
 
 class AudioPlayer extends GetView<SoundController> with WidgetsBindingObserver {
   AudioPlayer({
     super.key,
   });
+
+  Stream<PositionData> get _stream {
+    return CombineLatestStream.combine3<Duration, Duration, Duration?,
+            PositionData>(
+        controller.player.positionStream,
+        controller.player.bufferedPositionStream,
+        controller.player.durationStream,
+        (position, bufferedPosition, duration) => PositionData(
+            position, bufferedPosition, duration ?? Duration.zero));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +48,56 @@ class AudioPlayer extends GetView<SoundController> with WidgetsBindingObserver {
                         color: controller.isEdit.value
                             ? Colors.redAccent
                             : Colors.amber,
-                        child: AudioControls(player: controller.player),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.volume_up,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                showSliderDialog(
+                                  context: context,
+                                  title: "볼륨",
+                                  divisions: 10,
+                                  min: 0.0,
+                                  max: 1.0,
+                                  value: controller.player.volume,
+                                  stream: controller.player.volumeStream,
+                                  onChanged: controller.player.setVolume,
+                                );
+                              },
+                            ),
+                            AudioControls(player: controller.player),
+                            StreamBuilder<double>(
+                              stream: controller.player.speedStream,
+                              builder: (context, snapshot) => IconButton(
+                                icon: Text(
+                                    "${snapshot.data?.toStringAsFixed(1)}x",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    )),
+                                onPressed: () {
+                                  showSliderDialog(
+                                    context: context,
+                                    title: "재생속도",
+                                    divisions: 10,
+                                    min: 0.1,
+                                    max: 3,
+                                    value: controller.player.speed,
+                                    stream: controller.player.speedStream,
+                                    onChanged: controller.player.setSpeed,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     StreamBuilder<PositionData>(
-                      stream: controller.stream,
+                      stream: _stream,
                       builder: (context, snapshot) {
                         final positionData = snapshot.data;
 

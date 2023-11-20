@@ -3,6 +3,7 @@
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 // import 'package:flextv_bgm_player/controllers/youtube_controller';
 import 'package:flutter/foundation.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -31,7 +32,7 @@ class BgmController extends GetxController {
   final SoundController soundController = Get.find<SoundController>();
 
   final Rx<EditingStatus> status = Rx(EditingStatus.done);
-  final RxList<Sound> items = RxList();
+  final RxList<Sound> playlist = RxList();
   final Rx<SoundSourceType> sourceType = Rx(SoundSourceType.file);
 
   final RxString name = RxString('제목 없음');
@@ -65,15 +66,15 @@ class BgmController extends GetxController {
 
   void swap(int oldIndex, int newIndex) {
     newIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
-    Sound item = items.removeAt(oldIndex);
-    items.insert(newIndex, item);
-    items.refresh();
+    Sound item = playlist.removeAt(oldIndex);
+    playlist.insert(newIndex, item);
+    playlist.refresh();
     submit();
   }
 
   void modify(String id) async {
     status.value = EditingStatus.modify;
-    Sound item = items.firstWhere((e) => e.id == id);
+    Sound item = playlist.firstWhere((e) => e.id == id);
     sourceType.value = item.source.type;
     sourceController.text = item.source.uri;
     doneController.text = item.done;
@@ -83,8 +84,8 @@ class BgmController extends GetxController {
 
   void delete(String id) {
     status.value = EditingStatus.delete;
-    items.removeWhere((e) => e.id == id);
-    items.refresh();
+    playlist.removeWhere((e) => e.id == id);
+    playlist.refresh();
     submit();
     Get.back();
   }
@@ -146,21 +147,21 @@ class BgmController extends GetxController {
       Sound newItem = create(id);
       switch (status.value) {
         case EditingStatus.modify:
-          Sound regacyItem = items.firstWhere((e) => e.id == id);
+          Sound regacyItem = playlist.firstWhere((e) => e.id == id);
           // 데이터 같으면 저장 안함
           if (mapEquals(regacyItem.toMap(), newItem.toMap())) {
             return Get.back();
           }
-          int index = items.indexWhere((e) => e.id == id);
-          items[index] = newItem;
+          int index = playlist.indexWhere((e) => e.id == id);
+          playlist[index] = newItem;
           break;
         case EditingStatus.regist:
-          items.add(newItem);
+          playlist.add(newItem);
         default:
           break;
       }
 
-      items.refresh();
+      playlist.refresh();
       submit();
       Get.back();
     }
@@ -171,7 +172,7 @@ class BgmController extends GetxController {
         .collection('bgm')
         // .doc(user?.id.toString())
         .doc('17483')
-        .update({"playlist": items.map((e) => e.toMap()).toList()});
+        .update({"playlist": playlist.map((e) => e.toMap()).toList()});
   }
 
   void _sourceTypeListener(value) {
@@ -190,7 +191,20 @@ class BgmController extends GetxController {
   onInit() async {
     super.onInit();
     respose = await connection();
-    items.value = respose?.playlist ?? [];
+    playlist.value = respose?.playlist ?? [];
+    soundController.player.setAudioSource(
+        ConcatenatingAudioSource(
+          useLazyPreparation: true,
+          shuffleOrder: DefaultShuffleOrder(),
+          children: (respose?.playlist ?? []).map((e) {
+            debugPrint('e: ${e.source.uri}');
+            return e.source.type == SoundSourceType.file
+                ? AudioSource.file(e.source.uri)
+                : AudioSource.uri(Uri.parse(e.source.uri));
+          }).toList(),
+        ),
+        initialIndex: 0,
+        initialPosition: Duration.zero);
     sourceType.listen(_sourceTypeListener);
 
     debounce(

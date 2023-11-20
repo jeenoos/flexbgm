@@ -2,11 +2,20 @@ import 'dart:ffi';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
-import 'package:flextv_bgm_player/widget/audio/audio_ui.dart';
+import 'package:flextv_bgm_player/widget/audio/audio_common.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:get/get.dart';
-import 'package:rxdart/rxdart.dart';
+import 'package:path/path.dart';
+
+// import 'package:rxdart/rxdart.dart';
+enum PlayState {
+  paused,
+  playing,
+  loading,
+}
+
+enum RepeatState { off, repeatSong, repeatPlaylist }
 
 class SoundController extends GetxController with WidgetsBindingObserver {
   final _player = AudioPlayer();
@@ -14,9 +23,22 @@ class SoundController extends GetxController with WidgetsBindingObserver {
   final RxnDouble drag = RxnDouble(null);
   final RxDouble payload = RxDouble(0.0);
   final Rxn<RangeValues> range = Rxn(null);
+  final Rx<PlayState> playState = Rx(PlayState.loading);
+  final Rx<RepeatState> repeatState = Rx(RepeatState.off);
+  final Rx<ProgressState> progressState = Rx(const ProgressState(
+      buffered: Duration.zero, current: Duration.zero, total: Duration.zero));
+  final Rxn<ConcatenatingAudioSource> playlist = Rxn();
   TextEditingController urlController = TextEditingController();
   TextEditingController pathController = TextEditingController();
+
   AudioPlayer get player => _player;
+
+  bool get isLast => false;
+
+  bool get isShuffle => false;
+
+  String get title => '타이틀';
+  List<String> get titles => [];
 
   @override
   void onInit() async {
@@ -78,6 +100,16 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     _player.pause();
   }
 
+  void next() {
+    debugPrint('next');
+  }
+
+  void prev() {}
+
+  void shuffle() {}
+
+  void repeat() {}
+
   void seek(double position) {
     _player.seek(Duration(milliseconds: position.toInt()));
   }
@@ -85,10 +117,9 @@ class SoundController extends GetxController with WidgetsBindingObserver {
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
-    _player.playbackEventStream.listen((event) {
-      debugPrint('${event.updatePosition}');
-    }, onError: (Object e, StackTrace stackTrace) {
-      debugPrint('A stream error occurred: $e');
+
+    player.playerStateStream.listen((state) {
+      // playState.value = state.processingState;
     });
 
     isEdit.listen((edit) async {
@@ -102,12 +133,66 @@ class SoundController extends GetxController with WidgetsBindingObserver {
       _player.stop();
     });
 
-    //   // AAC example: https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.aac
-    //   await _player.setAudioSource(AudioSource.uri(Uri.parse(
-    //       "https://s3.amazonaws.com/scifri-episodes/scifri20181123-episode.mp3")));
-    // } catch (e) {
-    //   debugPrint("Error loading audio source: $e");
-    // }
+    _listenForChangesInPlayerState();
+    _listenForChangesInPlayerPosition();
+    _listenForChangesInBufferedPosition();
+    _listenForChangesInTotalDuration();
+    _listenForChangesInSequenceState();
+  }
+
+  void _listenForChangesInPlayerState() {
+    _player.playerStateStream.listen((playerState) {
+      final isPlaying = playerState.playing;
+      final processingState = playerState.processingState;
+      if (processingState == ProcessingState.loading ||
+          processingState == ProcessingState.buffering) {
+        playState.value = PlayState.loading;
+      } else if (!isPlaying) {
+        playState.value = PlayState.paused;
+      } else if (processingState != ProcessingState.completed) {
+        playState.value = PlayState.playing;
+      } else {
+        _player.seek(Duration.zero);
+        _player.pause();
+      }
+    });
+  }
+
+  void _listenForChangesInPlayerPosition() {
+    _player.positionStream.listen((position) {
+      final oldState = progressState.value;
+      progressState.value = ProgressState(
+        current: position,
+        buffered: oldState.buffered,
+        total: oldState.total,
+      );
+    });
+  }
+
+  void _listenForChangesInBufferedPosition() {
+    _player.bufferedPositionStream.listen((bufferedPosition) {
+      final oldState = progressState.value;
+      progressState.value = ProgressState(
+        current: oldState.current,
+        buffered: bufferedPosition,
+        total: oldState.total,
+      );
+    });
+  }
+
+  void _listenForChangesInTotalDuration() {
+    _player.durationStream.listen((totalDuration) {
+      final oldState = progressState.value;
+      progressState.value = ProgressState(
+        current: oldState.current,
+        buffered: oldState.buffered,
+        total: totalDuration ?? Duration.zero,
+      );
+    });
+  }
+
+  void _listenForChangesInSequenceState() {
+    // TODO
   }
 
   @override
@@ -122,15 +207,5 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       _player.stop();
     }
-  }
-
-  Stream<PositionData> get stream {
-    return CombineLatestStream.combine3<Duration, Duration, Duration?,
-            PositionData>(
-        _player.positionStream,
-        _player.bufferedPositionStream,
-        _player.durationStream,
-        (position, bufferedPosition, duration) => PositionData(
-            position, bufferedPosition, duration ?? Duration.zero));
   }
 }
