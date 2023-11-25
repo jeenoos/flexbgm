@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_xlider/flutter_xlider.dart';
@@ -19,8 +18,6 @@ class AudioControls extends GetView<SoundController> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Opens volume slider dialog
-
         StreamBuilder<PlayerState>(
           stream: player.playerStateStream,
           builder: (context, snapshot) {
@@ -69,6 +66,128 @@ class AudioControls extends GetView<SoundController> {
       ],
     );
   }
+
+  static Handler(
+      {IconData? icon, Color color = Colors.white, bool hide = false}) {
+    return FlutterSliderHandler(
+      decoration: const BoxDecoration(),
+      child: Visibility(
+        visible: !hide,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  spreadRadius: 0.05,
+                  blurRadius: 5,
+                  offset: const Offset(0, 1))
+            ],
+          ),
+          child: Container(
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(
+              icon,
+              color: Colors.grey,
+              size: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PreviousSongButton extends GetView<SoundController> {
+  const PreviousSongButton({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => IconButton(
+        icon: Icon(Icons.skip_previous,
+            color: controller.isFirst.value
+                ? Colors.white.withOpacity(0.3)
+                : Colors.white),
+        onPressed: controller.prev,
+      ),
+    );
+  }
+}
+
+class NextSongButton extends GetView<SoundController> {
+  const NextSongButton({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => IconButton(
+        icon: Icon(Icons.skip_next,
+            color: controller.isLast.value
+                ? Colors.white.withOpacity(0.3)
+                : Colors.white),
+        onPressed: controller.next,
+      ),
+    );
+  }
+}
+
+class PlayButton extends GetView<SoundController> {
+  const PlayButton({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      switch (controller.playState.value) {
+        case PlayState.buffering:
+        case PlayState.loading:
+          return Container(
+              margin: const EdgeInsets.all(8.0),
+              width: 32.0,
+              height: 32.0,
+              child: const CircularProgressIndicator());
+        case PlayState.stoped:
+        case PlayState.ready:
+        case PlayState.paused:
+          return IconButton(
+            icon: const Icon(Icons.play_arrow, color: Colors.white),
+            iconSize: 32.0,
+            onPressed: controller.play,
+          );
+
+        case PlayState.playing:
+          return IconButton(
+            icon: const Icon(Icons.pause, color: Colors.white),
+            iconSize: 32.0,
+            onPressed: controller.pause,
+          );
+      }
+    });
+  }
+}
+
+class StopButton extends GetView<SoundController> {
+  const StopButton({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.shuffle, color: Colors.white),
+      onPressed: controller.stop,
+    );
+  }
+}
+
+class ShuffleButton extends GetView<SoundController> {
+  const ShuffleButton({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => IconButton(
+        icon: (controller.isShuffle.value)
+            ? const Icon(Icons.shuffle, color: Colors.white)
+            : Icon(Icons.shuffle, color: Colors.white.withOpacity(0.3)),
+        onPressed: controller.shuffle,
+      ),
+    );
+  }
 }
 
 class RepeatButton extends GetView<SoundController> {
@@ -78,80 +197,18 @@ class RepeatButton extends GetView<SoundController> {
     Icon icon;
     switch (controller.repeatState.value) {
       case RepeatState.off:
-        icon = const Icon(Icons.repeat, color: Colors.grey);
+        icon = Icon(Icons.repeat, color: Colors.white.withOpacity(0.3));
         break;
       case RepeatState.repeatSong:
-        icon = const Icon(Icons.repeat_one);
+        icon = const Icon(Icons.repeat_one, color: Colors.white);
         break;
       case RepeatState.repeatPlaylist:
-        icon = const Icon(Icons.repeat);
+        icon = const Icon(Icons.repeat, color: Colors.white);
         break;
     }
     return IconButton(
       icon: icon,
       onPressed: controller.repeat,
-    );
-  }
-}
-
-class PreviousSongButton extends GetView<SoundController> {
-  const PreviousSongButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.skip_previous),
-      onPressed: controller.prev,
-    );
-  }
-}
-
-class NextSongButton extends GetView<SoundController> {
-  const NextSongButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.skip_next),
-      onPressed: controller.next,
-    );
-  }
-}
-
-class PlayButton extends GetView<SoundController> {
-  const PlayButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    switch (controller.playState.value) {
-      case PlayState.loading:
-        return Container(
-            margin: const EdgeInsets.all(8.0),
-            width: 32.0,
-            height: 32.0,
-            child: const CircularProgressIndicator());
-      case PlayState.paused:
-        return IconButton(
-          icon: const Icon(Icons.play_arrow),
-          iconSize: 32.0,
-          onPressed: controller.play,
-        );
-      case PlayState.playing:
-        return IconButton(
-          icon: const Icon(Icons.pause),
-          iconSize: 32.0,
-          onPressed: controller.pause,
-        );
-    }
-  }
-}
-
-class ShuffleButton extends GetView<SoundController> {
-  const ShuffleButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: (controller.isShuffle)
-          ? const Icon(Icons.shuffle)
-          : const Icon(Icons.shuffle, color: Colors.grey),
-      onPressed: controller.shuffle,
     );
   }
 }
@@ -162,7 +219,18 @@ class CurrentSongTitle extends GetView<SoundController> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
-      child: Text(controller.title, style: const TextStyle(fontSize: 40)),
+      child: Obx(
+        () => Center(
+          child: Text(
+            controller.title,
+            style: const TextStyle(
+              fontSize: 20,
+              color: Colors.white,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -181,18 +249,6 @@ class Playlist extends GetView<SoundController> {
   }
 }
 
-// class AudioProgressBar extends StatelessWidget {
-//   const AudioProgressBar({Key? key}) : super(key: key);
-//   @override
-//   Widget build(BuildContext context) {
-//     return ProgressBar(
-//       progress: value.current,
-//       buffered: value.buffered,
-//       total: value.total,
-//       onSeek: _pageManager.seek,
-//     );
-//   }
-// }
 void showSliderDialog({
   required BuildContext context,
   required String title,
@@ -234,67 +290,38 @@ void showSliderDialog({
   );
 }
 
-class SeekBar extends StatefulWidget {
-  final Duration duration;
-  final Duration position;
-  final Duration bufferedPosition;
-  const SeekBar({
-    Key? key,
-    required this.duration,
-    required this.position,
-    required this.bufferedPosition,
-  }) : super(key: key);
-
-  @override
-  SeekBarState createState() => SeekBarState();
-}
-
-class SeekBarState extends State<SeekBar> {
-  late SliderThemeData _sliderThemeData;
-  SoundController controller = Get.find<SoundController>();
-  String? changed;
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _sliderThemeData = SliderTheme.of(context).copyWith(
-      trackHeight: 2.0,
-    );
-  }
-
+class SeekBar extends GetView<SoundController> {
+  const SeekBar({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    double start = controller.range.value!.start;
-    double end = controller.range.value!.end;
-    double buffer = widget.bufferedPosition.inMilliseconds.toDouble();
-    double position = widget.position.inMilliseconds.toDouble();
-    double duration = widget.duration.inMilliseconds.toDouble();
-    if (position > (controller.isEdit.value ? end : duration)) {
-      controller.pause();
-    }
-    // debugPrint('start: ${start}');
-    // debugPrint('end: ${end}');
-    // debugPrint('position: ${position}');
-    // debugPrint('duration: ${duration}');
-    return Stack(
-      children: <Widget>[
-        // SliderTheme(
-        //   data: _sliderThemeData.copyWith(
-        //     thumbShape: HiddenThumbComponentShape(),
-        //     activeTrackColor: Colors.transparent,
-        //     inactiveTrackColor: Colors.transparent,
-        //   ),
-        //   child: ExcludeSemantics(
-        //     child: Slider(
-        //       min: 0.0,
-        //       max: duration,
-        //       value: min(buffer, duration),
-        //       onChanged: (value) {},
-        //     ),
-        //   ),
-        // ),
-        Visibility(
-          visible: duration > 0,
-          child: IgnorePointer(
+    return Obx(() {
+      double start = controller.range.value!.start;
+      double end = controller.range.value!.end;
+      double buffer =
+          controller.progressState.value.buffered.inMilliseconds.toDouble();
+      double position =
+          controller.progressState.value.current.inMilliseconds.toDouble();
+      double duration =
+          controller.progressState.value.total.inMilliseconds.toDouble();
+      return Stack(
+        children: <Widget>[
+          FlutterSlider(
+            min: 0,
+            max: duration,
+            values: [buffer],
+            handlerWidth: 20,
+            handlerHeight: 20,
+            handler: AudioControls.Handler(hide: true),
+            trackBar: const FlutterSliderTrackBar(
+              activeTrackBar: BoxDecoration(
+                color: Colors.black26,
+              ),
+              inactiveTrackBar: BoxDecoration(
+                color: Colors.transparent,
+              ),
+            ),
+          ),
+          IgnorePointer(
             ignoring: controller.isEdit.value,
             child: FlutterSlider(
               min: 0,
@@ -304,12 +331,12 @@ class SeekBarState extends State<SeekBar> {
                 controller.drag.value = lowerValue;
               },
               onDragCompleted: (handlerIndex, lowerValue, upperValue) {
-                controller.seek(lowerValue);
+                controller.seek(Duration(milliseconds: lowerValue.toInt()));
                 controller.drag.value = null;
               },
-              handlerWidth: 18,
-              handlerHeight: 18,
-              handler: Handler(
+              handlerWidth: 20,
+              handlerHeight: 20,
+              handler: AudioControls.Handler(
                   icon: null,
                   color: controller.isEdit.value ? Colors.red : Colors.white),
               trackBar: FlutterSliderTrackBar(
@@ -379,93 +406,64 @@ class SeekBarState extends State<SeekBar> {
               ),
             ),
           ),
-        ),
-        Visibility(
-          visible: controller.isEdit.value && duration > 0,
-          child: FlutterSlider(
-            rangeSlider: true,
-            min: 0,
-            max: max(end, duration),
-            values: [start, end],
-            onDragging: (handlerIndex, lowerValue, upperValue) {
-              controller.range.value = RangeValues(lowerValue, upperValue);
-            },
-            onDragCompleted: (handlerIndex, lowerValue, upperValue) {
-              controller.seekAndPlay(
-                  handlerIndex == 0 ? lowerValue : upperValue - 3000);
-            },
-            handlerWidth: 18,
-            handlerHeight: 18,
-            handlerAnimation: const FlutterSliderHandlerAnimation(
-                curve: Curves.elasticOut,
-                reverseCurve: Curves.bounceIn,
-                duration: Duration(milliseconds: 0),
-                scale: 1),
-            handler: Handler(icon: Icons.chevron_right),
-            rightHandler: Handler(icon: Icons.chevron_left),
-            trackBar: const FlutterSliderTrackBar(
-              activeTrackBar: BoxDecoration(
-                color: Colors.redAccent,
-              ),
-            ),
-            tooltip: FlutterSliderTooltip(
-              alwaysShowTooltip: true,
-              textStyle: const TextStyle(
-                fontSize: 14,
-                color: Colors.black,
-              ),
-              positionOffset: FlutterSliderTooltipPositionOffset(top: 5),
-              boxStyle: const FlutterSliderTooltipBox(),
-              format: (String value) {
-                return Duration(milliseconds: double.parse(value).toInt())
-                    .toMMSS();
+          Visibility(
+            visible: controller.isEdit.value && duration > 0,
+            child: FlutterSlider(
+              rangeSlider: true,
+              min: 0,
+              max: max(end, duration),
+              values: [start, end],
+              onDragging: (handlerIndex, lowerValue, upperValue) {
+                controller.range.value = RangeValues(lowerValue, upperValue);
               },
-              custom: (value) {
-                return RichText(
-                  maxLines: 1,
-                  text: TextSpan(
-                    text: Duration(milliseconds: value.toInt()).toMMSS(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
+              onDragCompleted: (handlerIndex, lowerValue, upperValue) {
+                controller.seekAndPlay(
+                    handlerIndex == 0 ? lowerValue : upperValue - 3000);
+              },
+              handlerWidth: 18,
+              handlerHeight: 18,
+              handlerAnimation: const FlutterSliderHandlerAnimation(
+                  curve: Curves.elasticOut,
+                  reverseCurve: Curves.bounceIn,
+                  duration: Duration(milliseconds: 0),
+                  scale: 1),
+              handler: AudioControls.Handler(icon: Icons.chevron_right),
+              rightHandler: AudioControls.Handler(icon: Icons.chevron_left),
+              trackBar: const FlutterSliderTrackBar(
+                activeTrackBar: BoxDecoration(
+                  color: Colors.redAccent,
+                ),
+              ),
+              tooltip: FlutterSliderTooltip(
+                alwaysShowTooltip: true,
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
+                positionOffset: FlutterSliderTooltipPositionOffset(top: 5),
+                boxStyle: const FlutterSliderTooltipBox(),
+                format: (String value) {
+                  return Duration(milliseconds: double.parse(value).toInt())
+                      .toMMSS();
+                },
+                custom: (value) {
+                  return RichText(
+                    maxLines: 1,
+                    text: TextSpan(
+                      text: Duration(milliseconds: value.toInt()).toMMSS(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // Duration get _remaining => widget.duration - widget.position;
-
-  Handler({IconData? icon, Color color = Colors.white}) {
-    return FlutterSliderHandler(
-      decoration: const BoxDecoration(),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                spreadRadius: 0.05,
-                blurRadius: 5,
-                offset: const Offset(0, 1))
-          ],
-        ),
-        child: Container(
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          child: Icon(
-            icon,
-            color: Colors.grey,
-            size: 18,
-          ),
-        ),
-      ),
-    );
+        ],
+      );
+    });
   }
 }
 

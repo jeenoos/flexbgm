@@ -121,10 +121,8 @@ class Editor extends GetView<BgmController> {
                 child: const Youtube(),
               ),
               Visibility(
-                visible:
-                    controller.sourceType.value != SoundSourceType.youtube &&
-                        Get.find<SoundController>().payload > 0,
-                child: AudioPlayer(),
+                visible: controller.sourceType.value != SoundSourceType.youtube,
+                child: const AudioPlayer(),
               ),
               const SizedBox(height: 20),
               Visibility(

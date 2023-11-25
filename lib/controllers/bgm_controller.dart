@@ -192,19 +192,7 @@ class BgmController extends GetxController {
     super.onInit();
     respose = await connection();
     playlist.value = respose?.playlist ?? [];
-    soundController.player.setAudioSource(
-        ConcatenatingAudioSource(
-          useLazyPreparation: true,
-          shuffleOrder: DefaultShuffleOrder(),
-          children: (respose?.playlist ?? []).map((e) {
-            debugPrint('e: ${e.source.uri}');
-            return e.source.type == SoundSourceType.file
-                ? AudioSource.file(e.source.uri)
-                : AudioSource.uri(Uri.parse(e.source.uri));
-          }).toList(),
-        ),
-        initialIndex: 0,
-        initialPosition: Duration.zero);
+    soundController.setPlaylist(respose?.playlist ?? []);
     sourceType.listen(_sourceTypeListener);
 
     debounce(
