@@ -1,4 +1,6 @@
 // ignore: file_names
+import 'dart:math';
+
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flextv_bgm_player/widget/app_logo.dart';
 import 'package:flextv_bgm_player/widget/audio/audio_controls.dart';
@@ -14,41 +16,25 @@ class Home extends GetView<SoundController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      double position =
-          controller.progressState.value.current.inMilliseconds.toDouble();
-      double duration =
-          controller.progressState.value.total.inMilliseconds.toDouble();
+    return Scaffold(
+      appBar: const CustomAppBar(),
+      body: Column(
+        children: [
+          Obx(() {
+            double position = controller.current.value.toDouble();
+            double duration = controller.total.value.toDouble();
+            double start = controller.range.value.start.toDouble();
 
-      return Scaffold(
-        appBar: const CustomAppBar(),
-        body: Column(
-          children: [
-            Visibility(
-              visible: duration > 0.0,
-              child: Container(
-                color: Colors.black26,
-                height: 10,
-                child: FlutterSlider(
-                  min: 0.0,
-                  max: duration,
-                  values: [position],
-                  handlerHeight: 0,
-                  handlerWidth: 0,
-                  handler: AudioControls.Handler(hide: true),
-                  trackBar: const FlutterSliderTrackBar(
-                    activeTrackBarHeight: 10,
-                    inactiveTrackBarHeight: 10,
-                    activeTrackBar: BoxDecoration(color: Colors.redAccent),
-                  ),
-                ),
-              ),
-            ),
-            const Expanded(child: BgmList()),
-          ],
-        ),
-      );
-    });
+            return Container(
+              color: Colors.black26,
+              height: 10,
+              child: position >= start && start <= duration ? null : null,
+            );
+          }),
+          const Expanded(child: BgmList()),
+        ],
+      ),
+    );
   }
 }
 

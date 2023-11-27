@@ -1,36 +1,33 @@
 import 'package:audio_session/audio_session.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
-import 'package:flextv_bgm_player/widget/audio/audio_common.dart';
+import 'package:flextv_bgm_player/widget/common.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:get/get.dart';
 
 // import 'package:rxdart/rxdart.dart';
-enum PlayState { loading, buffering, ready, paused, playing, stoped }
 
-enum RepeatState { off, repeatSong, repeatPlaylist }
 
 class SoundController extends GetxController with WidgetsBindingObserver {
   final _player = AudioPlayer();
+
   final RxBool isEdit = RxBool(false);
   final RxnDouble drag = RxnDouble(null);
-  final Rxn<RangeValues> range = Rxn(null);
+  final Rx<RangeValues> range = Rx(const RangeValues(0.0, 0.0));
+  final RxInt current = RxInt(0);
+  final RxInt total = RxInt(0);
+  final RxInt buffer = RxInt(0);
+ 
   final Rx<PlayState> playState = Rx(PlayState.loading);
-  final Rx<RepeatState> repeatState = Rx(RepeatState.off);
-  final Rx<ProgressState> progressState = Rx(const ProgressState(
-      buffered: Duration.zero, current: Duration.zero, total: Duration.zero));
-  final Rxn<IndexedAudioSource> currentSource = Rxn(null);
-  final RxList<IndexedAudioSource> playlist = RxList([]);
-  final RxBool isShuffle = RxBool(false);
-  final RxBool isFirst = RxBool(true);
-  final RxBool isLast = RxBool(true);
 
-  TextEditingController urlController = TextEditingController();
-  TextEditingController pathController = TextEditingController();
+  
+  final RxList<IndexedAudioSource> playlist = RxList([]);
+
+  final RxString routeName = RxString('/home');
 
   AudioPlayer get player => _player;
-  String get title => currentSource.value?.tag as String? ?? '';
-  List<String> get titles => [];
+
+  bool get isHome => routeName.value == '/home';
 
   @override
   void onInit() async {
@@ -67,6 +64,7 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     } else {
       await _player.setFilePath(path);
     }
+    await _player.load();
     Duration? res = await _player.load();
     if (res != null) {
       double duration = res.inMilliseconds.toDouble();
@@ -74,105 +72,77 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  void setPlaylist(List<Sound> items) async {
-    List<AudioSource> list = items.map((e) {
-      return e.source.type == SoundSourceType.file
-          ? AudioSource.file(e.source.uri, tag: e.name)
-          : AudioSource.uri(Uri.parse(e.source.uri), tag: e.name);
-    }).toList();
-    // playlist.value = list;
-    await player.setAudioSource(
-      ConcatenatingAudioSource(
-        useLazyPreparation: true,
-        shuffleOrder: DefaultShuffleOrder(),
-        children: list,
-      ),
-      initialIndex: 0,
-      initialPosition: Duration.zero,
+  void setSound(Sound sound) async {
+    await setUri(sound.source.uri);
+    range.value = sound.source.range;
+    await _player.setClip(
+      start: Duration(milliseconds: range.value.start.toInt()),
+      end: Duration(milliseconds: range.value.end.toInt()),
     );
   }
 
-  void setSound(Sound sound) async {
-    await setUri(sound.source.uri);
-    if (sound.source.range != null) {
-      range.value = sound.source.range;
-      await _player.setClip(
-        start: Duration(milliseconds: range.value!.start.toInt()),
-        end: Duration(milliseconds: range.value!.end.toInt()),
-      );
-    }
-  }
-
   void reset() {
-    _player.stop();
-    isEdit.value = false;
-    pathController.text = '';
-    urlController.text = '';
     isEdit.value = false;
     drag.value = null;
-    range.value = null;
+    current.value = 0;
+    total.value = 0;
+    buffer.value = 0;
   }
 
   void seekAndPlay(double position) async {
-    await _player.seek(Duration(milliseconds: position.toInt()));
-    _player.play();
+    await player.seek(Duration(milliseconds: position.toInt()));
+    player.play();
   }
 
   void play() async {
-    isEdit.value ? seekAndPlay(range.value?.start ?? 0) : _player.play();
+    debugPrint('${isEdit.value}');
+    isEdit.value ? seekAndPlay(range.value.start) : player.play();
     playState.value = PlayState.playing;
   }
 
   void stop() {
-    _player.stop();
+    player.stop();
+    playState.value = PlayState.stoped;
   }
 
   void pause() {
-    _player.pause();
+    player.pause();
     playState.value = PlayState.paused;
   }
 
-  void next() {
-    _player.seekToNext();
-  }
-
-  void prev() {
-    _player.seekToPrevious();
-  }
-
-  void shuffle() {
-    _player.setShuffleModeEnabled(true);
-  }
-
-  void repeat() {
-    _player.setLoopMode(LoopMode.all);
-  }
-
   void seek(Duration position) {
-    _player.seek(position);
+    player.seek(position);
   }
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
-
+    _listenForChangesRouteName();
     _listenForChangesInPlayerClip();
     _listenForChangesInPlayerState();
     _listenForChangesInPlayerPosition();
     _listenForChangesInBufferedPosition();
     _listenForChangesInTotalDuration();
-    _listenForChangesInSequenceState();
+  }
+
+  void _listenForChangesRouteName() {
+    routeName.listen((name) async {
+      if (name == '/home') {
+        await _player.stop();
+        reset();
+      }
+    });
   }
 
   void _listenForChangesInPlayerClip() {
     isEdit.listen((edit) async {
-      Duration start = Duration(milliseconds: range.value?.start.toInt() ?? 0);
-      Duration end = Duration(milliseconds: range.value?.end.toInt() ?? 0);
+      Duration start = Duration(milliseconds: range.value.start.toInt());
+      Duration end = Duration(milliseconds: range.value.end.toInt());
       edit
-          ? await _player.setClip()
-          : await _player.setClip(start: start, end: end);
-      edit ? await _player.seek(start) : await _player.seek(Duration.zero);
-      _player.stop();
+          ? await player.setClip()
+          : await player.setClip(start: start, end: end);
+      edit ? await player.seek(start) : await player.seek(Duration.zero);
+      player.stop();
     });
   }
 
@@ -193,74 +163,35 @@ class SoundController extends GetxController with WidgetsBindingObserver {
       } else if (processingState != ProcessingState.completed) {
         playState.value = PlayState.playing;
       } else {
-        _player.seek(Duration.zero);
-        _player.pause();
+        player.seek(Duration.zero);
+        player.pause();
       }
     });
   }
 
   void _listenForChangesInPlayerPosition() {
     _player.positionStream.listen((position) {
-      final oldState = progressState.value;
-      progressState.value = ProgressState(
-        current: position,
-        buffered: oldState.buffered,
-        total: oldState.total,
-      );
-
-      if (position >
-          (isEdit.value
-              ? range.value!.end.milliseconds
-              : progressState.value.total)) {
-        pause();
+      current.value = position.inMilliseconds;
+      int duration =
+          (isEdit.value || isHome) ? range.value.end.toInt() : total.value;
+      if (current.value > duration) {
+        stop();
       }
-      // debugPrint('changesInPlayerPosition: ${position.toString()}');
     });
   }
 
   void _listenForChangesInBufferedPosition() {
     _player.bufferedPositionStream.listen((bufferedPosition) {
-      final oldState = progressState.value;
-      progressState.value = ProgressState(
-        current: oldState.current,
-        buffered: bufferedPosition,
-        total: oldState.total,
-      );
-      // debugPrint('changesInBufferedPosition: ${bufferedPosition.toString()}');
+      buffer.value = bufferedPosition.inMilliseconds;
     });
   }
 
   void _listenForChangesInTotalDuration() {
     _player.durationStream.listen((totalDuration) {
-      final oldState = progressState.value;
-      progressState.value = ProgressState(
-        current: oldState.current,
-        buffered: oldState.buffered,
-        total: totalDuration ?? Duration.zero,
-      );
-      // debugPrint('changesInTotalDuration: ${totalDuration.toString()}');
+      total.value = totalDuration?.inMilliseconds ?? 0;
     });
   }
 
-  void _listenForChangesInSequenceState() {
-    _player.sequenceStateStream.listen((sequenceState) {
-      if (sequenceState == null) return;
-      final currentItem = sequenceState.currentSource;
-      final index = sequenceState.currentIndex;
-
-      currentSource.value = currentItem;
-      final list = sequenceState.effectiveSequence;
-      playlist.value = list;
-      // update previous and next buttons
-      if (list.isEmpty || currentSource.value == null) {
-        isFirst.value = true;
-        isLast.value = true;
-      } else {
-        isFirst.value = list.first == currentItem;
-        isLast.value = list.last == currentItem;
-      }
-    });
-  }
 
   @override
   void dispose() {

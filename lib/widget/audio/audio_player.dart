@@ -89,7 +89,7 @@ class AudioPlayer extends GetView<SoundController> {
                     padding: const EdgeInsets.only(left: 20, right: 20),
                     child: Obx(
                       () => Visibility(
-                        visible: controller.range.value != null,
+                        visible: controller.range.value.end > 0,
                         child: const SeekBar(),
                       ),
                     ),

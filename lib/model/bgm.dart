@@ -71,11 +71,11 @@ class Sound {
 class SoundSource {
   final SoundSourceType type;
   final String uri;
-  RangeValues? range;
+  RangeValues range;
   SoundSource({
     required this.type,
     required this.uri,
-    this.range,
+    required this.range,
   });
 
   factory SoundSource.fromMap(Map<String, dynamic> map) {
@@ -89,7 +89,7 @@ class SoundSource {
     return <String, dynamic>{
       'type': type.value,
       'uri': uri,
-      'range': SoundSourceRange.toMap(range?.start, range?.end)
+      'range': SoundSourceRange.toMap(range.start, range.end)
     };
   }
 }

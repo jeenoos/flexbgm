@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flextv_bgm_player/controllers/sound_controller.dart';
+import 'package:flextv_bgm_player/widget/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_xlider/flutter_xlider.dart';
 import 'package:get/get.dart';
@@ -99,38 +100,6 @@ class AudioControls extends GetView<SoundController> {
   }
 }
 
-class PreviousSongButton extends GetView<SoundController> {
-  const PreviousSongButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => IconButton(
-        icon: Icon(Icons.skip_previous,
-            color: controller.isFirst.value
-                ? Colors.white.withOpacity(0.3)
-                : Colors.white),
-        onPressed: controller.prev,
-      ),
-    );
-  }
-}
-
-class NextSongButton extends GetView<SoundController> {
-  const NextSongButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => IconButton(
-        icon: Icon(Icons.skip_next,
-            color: controller.isLast.value
-                ? Colors.white.withOpacity(0.3)
-                : Colors.white),
-        onPressed: controller.next,
-      ),
-    );
-  }
-}
-
 class PlayButton extends GetView<SoundController> {
   const PlayButton({Key? key}) : super(key: key);
   @override
@@ -175,79 +144,19 @@ class StopButton extends GetView<SoundController> {
   }
 }
 
-class ShuffleButton extends GetView<SoundController> {
-  const ShuffleButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => IconButton(
-        icon: (controller.isShuffle.value)
-            ? const Icon(Icons.shuffle, color: Colors.white)
-            : Icon(Icons.shuffle, color: Colors.white.withOpacity(0.3)),
-        onPressed: controller.shuffle,
-      ),
-    );
-  }
-}
-
-class RepeatButton extends GetView<SoundController> {
-  const RepeatButton({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    Icon icon;
-    switch (controller.repeatState.value) {
-      case RepeatState.off:
-        icon = Icon(Icons.repeat, color: Colors.white.withOpacity(0.3));
-        break;
-      case RepeatState.repeatSong:
-        icon = const Icon(Icons.repeat_one, color: Colors.white);
-        break;
-      case RepeatState.repeatPlaylist:
-        icon = const Icon(Icons.repeat, color: Colors.white);
-        break;
-    }
-    return IconButton(
-      icon: icon,
-      onPressed: controller.repeat,
-    );
-  }
-}
-
-class CurrentSongTitle extends GetView<SoundController> {
-  const CurrentSongTitle({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Obx(
-        () => Center(
-          child: Text(
-            controller.title,
-            style: const TextStyle(
-              fontSize: 20,
-              color: Colors.white,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class Playlist extends GetView<SoundController> {
-  const Playlist({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-        itemCount: controller.titles.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(controller.titles[index]),
-          );
-        });
-  }
-}
+// class Playlist extends GetView<SoundController> {
+//   const Playlist({Key? key}) : super(key: key);
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListView.builder(
+//         itemCount: controller.titles.length,
+//         itemBuilder: (context, index) {
+//           return ListTile(
+//             title: Text(controller.titles[index]),
+//           );
+//         });
+//   }
+// }
 
 void showSliderDialog({
   required BuildContext context,
@@ -295,114 +204,118 @@ class SeekBar extends GetView<SoundController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      double start = controller.range.value!.start;
-      double end = controller.range.value!.end;
-      double buffer =
-          controller.progressState.value.buffered.inMilliseconds.toDouble();
-      double position =
-          controller.progressState.value.current.inMilliseconds.toDouble();
-      double duration =
-          controller.progressState.value.total.inMilliseconds.toDouble();
+      double start = controller.range.value.start;
+      double end = controller.range.value.end;
+      double buffer = controller.buffer.value.toDouble();
+      double position = controller.current.value.toDouble();
+      double duration = controller.total.value.toDouble();
       return Stack(
         children: <Widget>[
-          FlutterSlider(
-            min: 0,
-            max: duration,
-            values: [buffer],
-            handlerWidth: 20,
-            handlerHeight: 20,
-            handler: AudioControls.Handler(hide: true),
-            trackBar: const FlutterSliderTrackBar(
-              activeTrackBar: BoxDecoration(
-                color: Colors.black26,
-              ),
-              inactiveTrackBar: BoxDecoration(
-                color: Colors.transparent,
+          Visibility(
+            visible: duration > 0,
+            child: FlutterSlider(
+              min: 0,
+              max: duration,
+              values: [buffer],
+              handlerWidth: 20,
+              handlerHeight: 20,
+              handler: AudioControls.Handler(hide: true),
+              trackBar: const FlutterSliderTrackBar(
+                activeTrackBar: BoxDecoration(
+                  color: Colors.black26,
+                ),
+                inactiveTrackBar: BoxDecoration(
+                  color: Colors.transparent,
+                ),
               ),
             ),
           ),
           IgnorePointer(
             ignoring: controller.isEdit.value,
-            child: FlutterSlider(
-              min: 0,
-              max: duration,
-              values: [min(controller.drag.value ?? position, duration)],
-              onDragging: (handlerIndex, lowerValue, upperValue) {
-                controller.drag.value = lowerValue;
-              },
-              onDragCompleted: (handlerIndex, lowerValue, upperValue) {
-                controller.seek(Duration(milliseconds: lowerValue.toInt()));
-                controller.drag.value = null;
-              },
-              handlerWidth: 20,
-              handlerHeight: 20,
-              handler: AudioControls.Handler(
-                  icon: null,
-                  color: controller.isEdit.value ? Colors.red : Colors.white),
-              trackBar: FlutterSliderTrackBar(
-                activeTrackBar: BoxDecoration(
-                  color: controller.isEdit.value
-                      ? Colors.transparent
-                      : Colors.blue,
-                ),
-                inactiveTrackBar: BoxDecoration(
-                  color: controller.isEdit.value ? Colors.transparent : null,
-                ),
-              ),
-              tooltip: FlutterSliderTooltip(
-                disabled: controller.isEdit.value,
-                alwaysShowTooltip: true,
-                textStyle: const TextStyle(
-                  // fontSize: 20,
-                  color: Colors.black,
-                ),
-                positionOffset: FlutterSliderTooltipPositionOffset(top: 5),
-                boxStyle: const FlutterSliderTooltipBox(),
-                custom: (value) {
-                  return RichText(
-                    maxLines: 1,
-                    text: TextSpan(
-                      text: Duration(milliseconds: value.toInt()).toMMSS(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
-                      ),
-                    ),
-                  );
+            child: Visibility(
+              visible: duration > 0,
+              child: FlutterSlider(
+                min: 0,
+                max: duration,
+                values: [min(controller.drag.value ?? position, duration)],
+                onDragging: (handlerIndex, lowerValue, upperValue) {
+                  controller.drag.value = lowerValue;
                 },
-                format: (String value) {
-                  return Duration(milliseconds: double.parse(value).toInt())
-                      .toMMSS();
+                onDragCompleted: (handlerIndex, lowerValue, upperValue) {
+                  controller.seek(Duration(milliseconds: lowerValue.toInt()));
+                  controller.drag.value = null;
                 },
-              ),
-              hatchMark: FlutterSliderHatchMark(
-                labelsDistanceFromTrackBar: 40,
-                // means 50 lines, from 0 to 100 percent
-                labels: [
-                  FlutterSliderHatchMarkLabel(
-                    percent: 1,
-                    label: const Text(
-                      '0:00:00',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black,
-                      ),
-                    ),
+                handlerWidth: 20,
+                handlerHeight: 20,
+                handler: AudioControls.Handler(
+                    icon: null,
+                    color: controller.isEdit.value ? Colors.red : Colors.white),
+                trackBar: FlutterSliderTrackBar(
+                  activeTrackBar: BoxDecoration(
+                    color: controller.isEdit.value
+                        ? Colors.transparent
+                        : Colors.blue,
                   ),
-                  FlutterSliderHatchMarkLabel(
-                    percent: 100.0,
-                    label: RichText(
+                  inactiveTrackBar: BoxDecoration(
+                    color: controller.isEdit.value ? Colors.transparent : null,
+                  ),
+                ),
+                tooltip: FlutterSliderTooltip(
+                  disabled: controller.isEdit.value,
+                  alwaysShowTooltip: true,
+                  textStyle: const TextStyle(
+                    // fontSize: 20,
+                    color: Colors.black,
+                  ),
+                  positionOffset: FlutterSliderTooltipPositionOffset(top: 5),
+                  boxStyle: const FlutterSliderTooltipBox(),
+                  custom: (value) {
+                    return RichText(
                       maxLines: 1,
                       text: TextSpan(
-                        text: Duration(milliseconds: duration.toInt()).toMMSS(),
+                        text: Duration(milliseconds: value.toInt()).toMMSS(),
                         style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                    );
+                  },
+                  format: (String value) {
+                    return Duration(milliseconds: double.parse(value).toInt())
+                        .toMMSS();
+                  },
+                ),
+                hatchMark: FlutterSliderHatchMark(
+                  labelsDistanceFromTrackBar: 40,
+                  // means 50 lines, from 0 to 100 percent
+                  labels: [
+                    FlutterSliderHatchMarkLabel(
+                      percent: 1,
+                      label: const Text(
+                        '0:00:00',
+                        style: TextStyle(
                           fontSize: 12,
                           color: Colors.black,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    FlutterSliderHatchMarkLabel(
+                      percent: 100.0,
+                      label: RichText(
+                        maxLines: 1,
+                        text: TextSpan(
+                          text:
+                              Duration(milliseconds: duration.toInt()).toMMSS(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

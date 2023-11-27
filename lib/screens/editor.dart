@@ -1,9 +1,6 @@
 import 'package:flextv_bgm_player/controllers/bgm_controller.dart';
-import 'package:flextv_bgm_player/controllers/sound_controller.dart';
 import 'package:flextv_bgm_player/model/bgm.dart';
 import 'package:flextv_bgm_player/widget/audio/audio_player.dart';
-
-// import 'package:flextv_bgm_player/widget/audio/player_widget.dart';
 import 'package:flextv_bgm_player/widget/text_input.dart';
 import 'package:flextv_bgm_player/widget/youtube/youtube_player.dart';
 // import 'package:flextv_bgm_player/widget/youtube/youtube_player';
