@@ -67,37 +67,6 @@ class AudioControls extends GetView<SoundController> {
       ],
     );
   }
-
-  static Handler(
-      {IconData? icon, Color color = Colors.white, bool hide = false}) {
-    return FlutterSliderHandler(
-      decoration: const BoxDecoration(),
-      child: Visibility(
-        visible: !hide,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  spreadRadius: 0.05,
-                  blurRadius: 5,
-                  offset: const Offset(0, 1))
-            ],
-          ),
-          child: Container(
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: Icon(
-              icon,
-              color: Colors.grey,
-              size: 18,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class PlayButton extends GetView<SoundController> {
@@ -219,7 +188,7 @@ class SeekBar extends GetView<SoundController> {
               values: [buffer],
               handlerWidth: 20,
               handlerHeight: 20,
-              handler: AudioControls.Handler(hide: true),
+              handler: SliderHandler(hide: true),
               trackBar: const FlutterSliderTrackBar(
                 activeTrackBar: BoxDecoration(
                   color: Colors.black26,
@@ -247,7 +216,7 @@ class SeekBar extends GetView<SoundController> {
                 },
                 handlerWidth: 20,
                 handlerHeight: 20,
-                handler: AudioControls.Handler(
+                handler: SliderHandler(
                     icon: null,
                     color: controller.isEdit.value ? Colors.red : Colors.white),
                 trackBar: FlutterSliderTrackBar(
@@ -340,8 +309,8 @@ class SeekBar extends GetView<SoundController> {
                   reverseCurve: Curves.bounceIn,
                   duration: Duration(milliseconds: 0),
                   scale: 1),
-              handler: AudioControls.Handler(icon: Icons.chevron_right),
-              rightHandler: AudioControls.Handler(icon: Icons.chevron_left),
+              handler: SliderHandler(icon: Icons.chevron_right),
+              rightHandler: SliderHandler(icon: Icons.chevron_left),
               trackBar: const FlutterSliderTrackBar(
                 activeTrackBar: BoxDecoration(
                   color: Colors.redAccent,

@@ -41,7 +41,9 @@ class MyApp extends StatelessWidget {
       getPages: AppPages.pages,
       initialRoute: AppRoutes.home,
       routingCallback: (routing) {
-        Get.find<SoundController>().routeName.value = routing?.current ?? '';
+        String routeName = routing?.current ?? '';
+        Get.find<BgmController>().routeName.value = routeName;
+        Get.find<SoundController>().routeName.value = routeName;
       },
     );
   }

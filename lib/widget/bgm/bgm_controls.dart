@@ -1,8 +1,7 @@
 import 'package:flextv_bgm_player/controllers/bgm_controller.dart';
 import 'package:flextv_bgm_player/widget/common.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
-import 'package:get/get_state_manager/src/simple/get_view.dart';
+import 'package:get/get.dart';
 
 /// Displays the play/pause button and volume/speed sliders.
 class BgmControls extends StatelessWidget {
@@ -24,12 +23,12 @@ class BgmControls extends StatelessWidget {
   }
 }
 
-
 class PlayButton extends GetView<BgmController> {
   const PlayButton({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      debugPrint('${controller.playState.value}');
       switch (controller.playState.value) {
         case PlayState.buffering:
         case PlayState.loading:
@@ -57,7 +56,6 @@ class PlayButton extends GetView<BgmController> {
     });
   }
 }
-
 
 class PreviousSongButton extends GetView<BgmController> {
   const PreviousSongButton({Key? key}) : super(key: key);

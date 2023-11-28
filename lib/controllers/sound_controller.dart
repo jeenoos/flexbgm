@@ -7,7 +7,6 @@ import 'package:get/get.dart';
 
 // import 'package:rxdart/rxdart.dart';
 
-
 class SoundController extends GetxController with WidgetsBindingObserver {
   final _player = AudioPlayer();
 
@@ -17,10 +16,9 @@ class SoundController extends GetxController with WidgetsBindingObserver {
   final RxInt current = RxInt(0);
   final RxInt total = RxInt(0);
   final RxInt buffer = RxInt(0);
- 
+
   final Rx<PlayState> playState = Rx(PlayState.loading);
 
-  
   final RxList<IndexedAudioSource> playlist = RxList([]);
 
   final RxString routeName = RxString('/home');
@@ -64,7 +62,7 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     } else {
       await _player.setFilePath(path);
     }
-    await _player.load();
+
     Duration? res = await _player.load();
     if (res != null) {
       double duration = res.inMilliseconds.toDouble();
@@ -129,6 +127,9 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     routeName.listen((name) async {
       if (name == '/home') {
         await _player.stop();
+      }
+
+      if (name == '/editor') {
         reset();
       }
     });
@@ -191,7 +192,6 @@ class SoundController extends GetxController with WidgetsBindingObserver {
       total.value = totalDuration?.inMilliseconds ?? 0;
     });
   }
-
 
   @override
   void dispose() {

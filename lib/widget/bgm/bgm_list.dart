@@ -35,7 +35,7 @@ class BgmList extends GetView<BgmController> {
                 ],
               ),
             ),
-            itemCount: controller.playlist.length,
+            itemCount: controller.sounds.length,
             itemBuilder: (context, index) {
               final Sound item = controller.sounds[index];
               return Container(
