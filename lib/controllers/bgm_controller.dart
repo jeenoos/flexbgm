@@ -80,32 +80,13 @@ class BgmController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  //렉스
   static BgmController get to => Get.find();
   String get title => currentSound.value?.name ?? '';
 
-  void setPlaylist(List<Sound> items) async {
-    List<AudioSource> list = items.map((e) {
-      return e.source.type == SoundSourceType.file
-          ? AudioSource.file(e.source.uri, tag: e.name)
-          : AudioSource.uri(Uri.parse(e.source.uri), tag: e.name);
-    }).toList();
-    // playlist.value = list;
-    // await _player.setAudioSource(
-    //   ConcatenatingAudioSource(
-    //     useLazyPreparation: true,
-    //     shuffleOrder: DefaultShuffleOrder(),
-    //     children: list,
-    //   ),
-    //   initialIndex: 0,
-    //   initialPosition: Duration.zero,
-    // );
-  }
-
   void regist() {
+    reset();
     status.value = EditingStatus.regist;
     Get.toNamed(AppRoutes.editor);
-    reset();
   }
 
   void swap(int oldIndex, int newIndex) {
@@ -122,7 +103,7 @@ class BgmController extends GetxController with WidgetsBindingObserver {
     sourceType.value = item.source.type;
     sourceController.text = item.source.uri;
     doneController.text = item.done;
-    soundController.setSound(item);
+    await soundController.setSound(item);
     Get.toNamed(AppRoutes.editor, arguments: id);
   }
 
@@ -159,19 +140,15 @@ class BgmController extends GetxController with WidgetsBindingObserver {
   }
 
   void play() async {
-    // playState.value = PlayState.playing;
-    // await _player.seek(Duration(milliseconds: start.value.toInt()));
     await _player.play();
   }
 
   void stop() async {
     await _player.seek(Duration.zero);
-    // playState.value = PlayState.stoped;
     await _player.stop();
   }
 
   void pause() async {
-    // playState.value = PlayState.paused;
     await _player.pause();
   }
 
@@ -226,17 +203,20 @@ class BgmController extends GetxController with WidgetsBindingObserver {
   void reset() {
     soundController.reset();
     doneController.text = '';
+    urlController.text = '';
+    pathController.text = '';
     errorName.value = null;
     errorSource.value = null;
   }
 
   void save(String? id) {
+    debugPrint('id: ${id}');
     if (validation()) {
       Sound newItem = create(id);
-      debugPrint('newItem: ${newItem.name}');
       switch (status.value) {
         case EditingStatus.modify:
           Sound regacyItem = sounds.firstWhere((e) => e.id == id);
+
           // 데이터 같으면 저장 안함
           if (mapEquals(regacyItem.toMap(), newItem.toMap())) {
             return Get.back();
@@ -270,7 +250,6 @@ class BgmController extends GetxController with WidgetsBindingObserver {
 
   void _listenForChangesRouteName() {
     routeName.listen((name) async {
-      debugPrint('name: ${name}');
       if (name == '/editor') {
         await _player.pause();
       }

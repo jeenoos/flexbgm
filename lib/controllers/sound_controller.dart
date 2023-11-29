@@ -62,25 +62,23 @@ class SoundController extends GetxController with WidgetsBindingObserver {
     } else {
       await _player.setFilePath(path);
     }
-
-    Duration? res = await _player.load();
-    if (res != null) {
-      double duration = res.inMilliseconds.toDouble();
-      range.value = RangeValues(0.0, duration);
-    }
   }
 
-  void setSound(Sound sound) async {
+  Future<void> setSound(Sound sound) async {
+    RangeValues ranges = sound.source.range;
+    range.value = ranges;
     await setUri(sound.source.uri);
-    range.value = sound.source.range;
-    await _player.setClip(
-      start: Duration(milliseconds: range.value.start.toInt()),
-      end: Duration(milliseconds: range.value.end.toInt()),
+    await _player
+        .load()
+        .then((value) => total.value = value?.inMilliseconds.toInt() ?? 0);
+    _player.setClip(
+      start: Duration(milliseconds: ranges.start.toInt()),
+      end: Duration(milliseconds: ranges.end.toInt()),
     );
   }
 
   void reset() {
-    isEdit.value = false;
+    debugPrint('soundcontroller reset');
     drag.value = null;
     current.value = 0;
     total.value = 0;
@@ -89,17 +87,17 @@ class SoundController extends GetxController with WidgetsBindingObserver {
 
   void seekAndPlay(double position) async {
     await player.seek(Duration(milliseconds: position.toInt()));
-    player.play();
+    _player.play();
   }
 
   void play() async {
     debugPrint('${isEdit.value}');
-    isEdit.value ? seekAndPlay(range.value.start) : player.play();
+    isEdit.value ? seekAndPlay(range.value.start) : _player.play();
     playState.value = PlayState.playing;
   }
 
   void stop() {
-    player.stop();
+    _player.stop();
     playState.value = PlayState.stoped;
   }
 
@@ -148,24 +146,19 @@ class SoundController extends GetxController with WidgetsBindingObserver {
   }
 
   void _listenForChangesInPlayerState() {
-    _player.playerStateStream.listen((playerState) {
-      final processingState = playerState.processingState;
+    _player.playerStateStream.listen((state) {
+      final isPlaying = state.playing;
+      final processingState = state.processingState;
       if (processingState == ProcessingState.loading ||
           processingState == ProcessingState.buffering) {
-        if (playState.value != PlayState.playing) {
-          playState.value = PlayState.loading;
-        }
-      } else if (processingState == ProcessingState.ready) {
-        if (playState.value != PlayState.playing) {
-          playState.value = PlayState.ready;
-        }
-      } else if (!playerState.playing) {
+        playState.value = PlayState.loading;
+      } else if (!isPlaying) {
         playState.value = PlayState.paused;
       } else if (processingState != ProcessingState.completed) {
         playState.value = PlayState.playing;
       } else {
-        player.seek(Duration.zero);
-        player.pause();
+        debugPrint('complete');
+        stop();
       }
     });
   }
@@ -173,8 +166,7 @@ class SoundController extends GetxController with WidgetsBindingObserver {
   void _listenForChangesInPlayerPosition() {
     _player.positionStream.listen((position) {
       current.value = position.inMilliseconds;
-      int duration =
-          (isEdit.value || isHome) ? range.value.end.toInt() : total.value;
+      int duration = isEdit.value ? range.value.end.toInt() : total.value;
       if (current.value > duration) {
         stop();
       }
